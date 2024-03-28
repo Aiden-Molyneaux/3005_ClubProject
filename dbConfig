@@ -1,0 +1,7 @@
+module.exports = {
+  user: "postgres",
+  host: "localhost",
+  database: "ClubDB",
+  password: "127127",
+  port: 5432,
+};
