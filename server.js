@@ -6,6 +6,13 @@ const express = require("express");
 // EXPRESS CONFIGURATION
 const app = express();
 
+app.use((req, res, next) => {
+  res.header('Access-Control-Allow-Origin', '*');
+  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, PATCH, DELETE');
+  res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Authorization');
+  next();
+});
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
@@ -14,9 +21,9 @@ app.post(
   "/auth/signup",
   passport.authenticate("local-signup", { session: false }),
   (req, res, next) => {
-    res.json({
-      user: req.user,
-    });
+    Logger.signupRequestReceived();
+    
+    res.json({ user: req.user, });
   }
 );
 
@@ -24,6 +31,8 @@ app.post(
   "/auth/login",
   passport.authenticate("local-login", { session: false }),
   (req, res, next) => {
+    Logger.loginRequestReceived();
+
     res.json({ user: req.user });
   }
 );
@@ -235,6 +244,8 @@ class Logger {
   static postRequestReceived() { console.log('POST request received'); }
   static patchRequestReceived() { console.log('PATCH request received'); }
   static deleteRequestReceived() { console.log('DELETE request received'); }
+  static signupRequestReceived() { console.log('SIGNUP request received'); }
+  static loginRequestReceived() { console.log('LOGIN request received'); }
 }
 
 app.listen(3000, () => console.log("Listening on port 3000"));
