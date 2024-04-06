@@ -1,50 +1,38 @@
-import { useState } from 'react';
 import './App.css';
-import axios from 'axios';
+import React from 'react';
+import { Routes, Route, useNavigate } from 'react-router-dom';
+import Auth from './ui/Auth.jsx';
+import Registration from './ui/Registration.jsx';
+import Dashboard from './ui/Dashboard.jsx';
+import Footer from './ui/Footer.jsx';
 
 function App() {
-  const [username, setUsername] = useState("");
-  const [password, setPassword] = useState("");
-  const [error, setError] = useState("");
+  const navigate = useNavigate();
 
-  function handleSubmit(event) {
-    event.preventDefault();
-    submitSignup();
-  }
   
-  function submitSignup() {
-    axios.post('http://localhost:3000/auth/signup', {
-      username: username,
-      password: password,
-      first_name: "Timber",
-      last_name: "Molyneaux",
-      email: "timber@hotmail.com"
-    })
-    .then(response => {
-        console.group("Sign-up successful:", response.data)
-    })
-    .catch(error => {
-        console.error('Sign-up error:', error);
-        setError("Sign-up failed. Please try again.");
-    });
-  }
+  React.useEffect(() => {
+    const auth = JSON.parse(window.localStorage.getItem('auth'));
+    if (auth) {
+      if(auth.user.role == 'none') {
+        navigate('/registration');
+      } else {
+        navigate('/dashboard');
+      }
+    } else {
+      navigate('/auth/login')
+    }
+  }, [])
 
   return (
     <>
-      <form onSubmit={handleSubmit}>
-        <div>
-          <label>Username:</label>
-          <input type="text" name="username" value={username} onChange={(event) => setUsername(event.target.value)}/>
-        </div>
-
-        <div>
-          <label>Password:</label>
-          <input type="text" name="password" value={password} onChange={(event) => setPassword(event.target.value)}/>
-        </div>
-
-        <button type="submit">Sign-up</button>
-        {error && <p>{error}</p>}
-      </form>
+      <Routes>
+        <Route path="/auth/login" element={<Auth/>}></Route>
+        <Route path="/auth/signup" element={<Auth/>}></Route>
+        <Route path="/registration" element={<Registration/>}></Route>
+        <Route path="/dashboard" element={<Dashboard/>}></Route>
+        <Route path="/member/schedule" element={<Dashboard/>}></Route>
+      </Routes>
+      <Footer/>
     </>
   );
 }

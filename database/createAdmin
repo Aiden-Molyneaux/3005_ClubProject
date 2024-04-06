@@ -1,0 +1,4 @@
+Must create admin via user interface so the password is encrypted.
+
+To make them admin:
+UPDATE users SET role='admin' WHERE username='admin';
