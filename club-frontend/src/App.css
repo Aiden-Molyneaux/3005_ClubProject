@@ -1,5 +1,233 @@
+:root {
+  font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
+  line-height: 1.5;
+  font-weight: 400;
+
+  --primary-color: #fcfc99;
+  --secondary-color: #79de79;
+}
+
 #root {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
   height: 100vh;
   width: 100vw;
   text-align: center;
+}
+
+h3, h4 {
+  margin: 0px;
+}
+
+label {
+  padding-right: 5px;
+  font-weight: 500;
+}
+
+a {
+  color: #111111;
+  text-decoration: inherit;
+}
+
+table, th, td {
+  border: 1px solid;
+  border-collapse: collapse;
+}
+
+td, th {
+  padding: 5px;
+}
+
+button {
+  padding: 10px;
+  font-size: 1em;
+  font-weight: 500;
+  font-family: inherit;
+  background-color: var(--secondary-color);
+  border-radius: 4px;
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: border-color 0.25s;
+}
+button:hover {
+  border-color: #111111;
+}
+button:focus,
+button:focus-visible {
+  outline: 4px auto -webkit-focus-ring-color;
+}
+
+body {
+  margin: 0px;
+  background-color: #79de79;
+}
+
+header {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 50vw;
+  margin: 10px 0px;
+  font-size: 25px;
+  background-color: var(--primary-color);
+  border-radius: 100vh;
+}
+
+header > h2 {
+  margin: 10px;
+}
+
+main {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+}
+
+.innerContainer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.outerContainer {
+  flex: 1;
+}
+
+.headerIcon {
+  height: 60px;
+  width: 60px;
+  padding-right: 8px;
+}
+
+.authForm {
+  padding: 20px;
+  background-color: var(--primary-color);
+  border-radius: 1vh;
+}
+
+.authForm > div {
+  display: flex;
+  padding: 5px;
+}
+
+.topMargin {
+  margin-top: 10px;
+}
+
+.bottomMargin {
+  margin-bottom: 10px;
+}
+
+.rightMargin {
+  margin-right: 10px;
+}
+
+.horizontalLine {
+  border-bottom: 2px solid black;
+  padding: 5px;
+}
+
+.innerRegForm > div {
+  display: flex;
+  padding: 5px;
+}
+
+.formButtons {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+}
+
+.regLogoutBanner, .dashboardLogoutBanner {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 10px;
+  background-color: var(--primary-color);
+  border-radius: 1vh;
+}
+
+.regLogoutBanner {
+  width: 10vw;
+
+}
+
+.regLogoutBanner > button {
+  padding: 5px;
+}
+
+.dashboardLogoutBanner {
+  width: 28vw;
+}
+
+.memberViewOptions {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 10px;
+  background-color: var(--primary-color);
+  border-radius: 1vh;
+}
+
+.underline {
+  text-decoration: underline;
+}
+
+.memberProfileSection {
+  display: flex;
+  justify-content: center;
+  margin-top: 10px;
+  gap: 10px;
+}
+
+.noTopMargin {
+  margin-top: 0px;
+}
+
+.healthAnalyticsSection {
+  display: flex;
+  flex-direction: column;
+  padding: 20px;
+  background-color: var(--primary-color);
+  border-radius: 1vh;
+}
+
+.healthAnalyticsSection > form > div, .healthAnalyticsSection > div {
+  display: flex;
+  padding: 5px;
+}
+
+.goalSection {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.memberSchedule {
+  display: flex;
+  gap: 10px;
+}
+
+.scheduler {
+  display: flex;
+  flex-direction: column;
+}
+
+.trainerScheduleButton {
+  margin: 3px;
+}
+
+footer {
+  width: 100vw;
+  margin-top: 10px;
+  flex-shrink: 0;
+  background-color: var(--primary-color);
+}
+
+footer > p {
+  margin: 3px;
+  font-weight: 500;
 }

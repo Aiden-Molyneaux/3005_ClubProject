@@ -63,15 +63,6 @@ app.post(
   }
 );
 
-app.post('/logout', logout);
-function logout(req, res) {
-  req.logout((err) => {
-    if (err) {
-      return next(err);
-    }
-  });
-}
-
 // USER CRUD
 app.get("/users", getUsers);
 async function getUsers(req, res) {
@@ -167,13 +158,13 @@ app.post("/members", createMember);
 async function createMember(req, res) {
   Logger.postRequestReceived();
 
-  const { user_id, gender, birth_date, weight } = req.body;
+  const { user_id, gender, birth_date, weight, height } = req.body;
   let data;
 
   try {
     data = await client.query(
-      "INSERT INTO members(user_id, gender, birth_date, weight) VALUES ($1, $2, $3, $4) RETURNING id, user_id, gender, birth_date, weight", 
-      [user_id, gender, birth_date, weight]
+      "INSERT INTO members(user_id, gender, birth_date, weight, height) VALUES ($1, $2, $3, $4, $5) RETURNING id, user_id, gender, birth_date, weight, height", 
+      [user_id, gender, birth_date, weight, height]
     );
   } catch (err) {
     console.error(err);
@@ -183,21 +174,16 @@ async function createMember(req, res) {
   }
 }
 
-app.patch("/members/:id", patchMember);
-async function patchMember(req, res) {
-  Logger.patchRequestReceived();
-}
-
 app.put("/members/:id", putMember);
 async function putMember(req, res) {
   Logger.putRequestReceived();
   
-  const { gender, birth_date, weight } = req.body;
+  const { gender, birth_date, weight, height } = req.body;
   let data;
   try {
     data = await client.query(
-      `UPDATE members SET gender = $2, birth_date = $3, weight = $4 WHERE id = $1 RETURNING id, user_id, gender, birth_date, weight;`, 
-      [req.params.id, gender, birth_date, weight])
+      `UPDATE members SET gender = $2, birth_date = $3, weight = $4, height = $5 WHERE id = $1 RETURNING id, user_id, gender, birth_date, weight, height;`, 
+      [req.params.id, gender, birth_date, weight, height])
     
   } catch (err) {
     console.error(err);
@@ -233,22 +219,119 @@ async function geTrainingSessions(req, res) {
 
   let data;
   try {
-    data = await client.query(`SELECT *
-      FROM (
-          SELECT *
-          FROM (
-              SELECT *
-              FROM trains
-              JOIN attendee ON trains.id = attendee.training_session_id
-          ) AS session_attendee
-          JOIN trainer ON session_attendee.trainer_id = trainer.id
-      ) AS session_trainer
-      JOIN users ON session_trainer.user_id = users.id;`);
+    data = await client.query(
+      `SELECT member_id, training_session_id, room_id, availability_id, date, start_time, end_time, session_trainer.trainer_id, user_id, username, first_name, last_name, email
+        FROM (
+            SELECT *
+            FROM (
+                SELECT *
+                FROM trains
+                JOIN attendee ON trains.id = attendee.training_session_id
+            ) AS session_attendee
+            JOIN trainer ON session_attendee.trainer_id = trainer.id
+        ) AS session_trainer
+        JOIN trainer_availability ON session_trainer.availability_id = trainer_availability.id
+        JOIN users ON session_trainer.user_id = users.id;`
+    );
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Internal Server Error' });
   } finally {
     res.status(200).json({ training_sessions: data.rows });
+  }
+}
+
+app.post("/training_sessions", createTrainingSession);
+async function createTrainingSession(req, res) {
+  Logger.postRequestReceived();
+
+  const { trainer_id, room_id, availability_id } = req.body;
+  let data;
+
+  try {
+    data = await client.query(
+      "INSERT INTO trains(trainer_id, room_id, availability_id) VALUES ($1, $2, $3) RETURNING id, trainer_id, room_id, availability_id", 
+      [trainer_id, room_id, availability_id]
+    );
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Internal Server Error' })
+  } finally {
+    res.status(200).json({ training_session: data.rows[0]} )
+  }
+}
+
+app.delete("/training_sessions/:id", deleteTrainingSession);
+async function deleteTrainingSession(req, res) {
+  Logger.deleteRequestReceived();
+
+  let data;
+  try {
+    data = await client.query("DELETE FROM trains WHERE id = $1;", [req.params.id]);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Internal Server Error' })
+  } finally {
+    if (data.rowCount == 0) { res.status(404).json({ error: "Training session does not exist." }); }
+    else { res.status(200).json({ confirmation: "Training session deleted." }); }
+  }
+}
+
+app.delete("/training_sessions_by_trainer", deleteTrainingSessionByTrainer);
+async function deleteTrainingSessionByTrainer(req, res) {
+  Logger.deleteRequestReceived();
+
+  console.log(req.params);
+  const trainer_id = req.query.trainer_id;
+  console.log({trainer_id})
+  let data;
+  try {
+    data = await client.query("DELETE FROM trains WHERE trainer_id = $1;", [trainer_id]);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Internal Server Error' })
+  } finally {
+    if (data.rowCount == 0) { res.status(404).json({ error: "Trainer's training sessions do not exist." }); }
+    else { res.status(200).json({ confirmation: "Trainer's training sessions deleted." }); }
+  }
+}
+
+// ATTENDEE CRUD
+app.post("/attendees", createAttendee);
+async function createAttendee(req, res) {
+  Logger.postRequestReceived();
+
+  const { training_session_id, member_id } = req.body;
+  console.log(training_session_id, member_id);
+  let data;
+
+  try {
+    data = await client.query(
+      "INSERT INTO attendee(training_session_id, member_id) VALUES ($1, $2) RETURNING training_session_id, member_id", 
+      [training_session_id, member_id]
+    );
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Internal Server Error' })
+  } finally {
+    res.status(200).json({ attendee: data.rows[0]} )
+  }
+}
+
+app.delete("/attendees", deleteAttendee);
+async function deleteAttendee(req, res) {
+  Logger.deleteRequestReceived();
+
+  const { training_session_id, member_id } = req.body;
+  let data;
+  try {
+    data = await client.query("DELETE FROM attendee WHERE training_session_id = $1 AND member_id = $2;", [training_session_id,  member_id]);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Internal Server Error' })
+  } finally {
+    if (data.rowCount == 0) { res.status(404).json({ error: "Attendee does not exist." }); }
+    else { res.status(200).json({ confirmation: "Attendee deleted." }); }
   }
 }
 
@@ -272,13 +355,13 @@ app.post("/fitness_goals", createFitnessGoal);
 async function createFitnessGoal(req, res) {
   Logger.postRequestReceived();
 
-  const { member_id, goal_text, status, display, date_created } = req.body;
+  const { member_id, goal_text, status, date_created } = req.body;
   let data;
 
   try {
     data = await client.query(
-      "INSERT INTO fitness_goal(member_id, goal_text, status, display, date_created) VALUES ($1, $2, $3, $4, $5) RETURNING id, member_id, goal_text, status, display, date_created", 
-      [member_id, goal_text, status, display, date_created]
+      "INSERT INTO fitness_goal(member_id, goal_text, status, date_created) VALUES ($1, $2, $3, $4) RETURNING id, member_id, goal_text, status, date_created", 
+      [member_id, goal_text, status, date_created]
     );
   } catch (err) {
     console.error(err);
@@ -296,8 +379,8 @@ async function patchFitnessGoal(req, res) {
   let data;
   try {
     data = await client.query(
-      `UPDATE fitness_goal SET status = $1 WHERE id = $2;`, 
-      [status, req.params.id]);
+      `UPDATE fitness_goal SET status = $2 WHERE id = $1;`, 
+      [req.params.id, status]);
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Internal Server Error' });
@@ -395,6 +478,22 @@ async function getTrainers(req, res) {
   }
 }
 
+app.get("/trainers_with_user", getTrainersWithUser);
+async function getTrainersWithUser(req, res) {
+  Logger.getRequestReceived();
+
+  let data;
+  try {
+    data = await client.query(`SELECT trainer.id as trainer_id, first_name, last_name 
+    FROM trainer, users WHERE trainer.user_id = users.id;`);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Internal Server Error' });
+  } finally {
+    res.status(200).json({ trainers_with_user: data.rows });
+  }
+}
+
 app.post("/trainers", createTrainer);
 async function createTrainer(req, res) {
   Logger.postRequestReceived();
@@ -486,13 +585,13 @@ app.post("/trainer_applications", createTrainerApplication);
 async function createTrainerApplication(req, res) {
   Logger.postRequestReceived();
 
-  const { user_id, resume, availability_type } = req.body;
+  const { user_id, resume, status, availability_type } = req.body;
   let data;
 
   try {
     data = await client.query(
-      "INSERT INTO trainer_application(user_id, resume, availability_type) VALUES ($1, $2, $3) RETURNING id, user_id, resume, availability_type", 
-      [user_id, resume, availability_type]);
+      "INSERT INTO trainer_application(user_id, resume, status, availability_type) VALUES ($1, $2, $3, $4) RETURNING id, user_id, resume, status, availability_type", 
+      [user_id, resume, status, availability_type]);
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Internal Server Error' })
@@ -509,8 +608,8 @@ async function patchTrainerApplication(req, res) {
   let data;
   try {
     data = await client.query(
-      `UPDATE trainer_application SET status = $1 WHERE id = $2;`, 
-      [status, req.params.id]);
+      `UPDATE trainer_application SET status = $2 WHERE id = $1;`, 
+      [req.params.id, status]);
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Internal Server Error' });
@@ -521,8 +620,8 @@ async function patchTrainerApplication(req, res) {
 }
 
 // TRAIN AVAILABILITY CRUD
-app.get("/trainer_availability", getTrainAvailability);
-async function getTrainAvailability(req, res) {
+app.get("/trainer_availability", getTrainerAvailability);
+async function getTrainerAvailability(req, res) {
   Logger.getRequestReceived();
 
   let data;
@@ -535,6 +634,30 @@ async function getTrainAvailability(req, res) {
     res.status(200).json({ trainer_availabilities: data.rows });
   }
 }
+
+app.get("/trainer_availability_with_trains", getTrainerAvailabilityWithTrains);
+async function getTrainerAvailabilityWithTrains(req, res) {
+  Logger.getRequestReceived();
+
+  const trainer_id = req.query.trainer_id;
+  console.log(trainer_id)
+  let data;
+  try {
+    data = await client.query(
+      `SELECT trainer_availability.id as id, trains.id as training_session_id, status, start_time, end_time, date
+      FROM trainer_availability
+      LEFT JOIN trains ON trainer_availability.id = trains.availability_id
+      WHERE trainer_availability.trainer_id = $1;`,
+      [trainer_id]
+    );
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Internal Server Error' });
+  } finally {
+    res.status(200).json({ trainer_availabilities: data.rows });
+  }
+}
+
 
 app.post("/trainer_availability", createTrainerAvailability);
 async function createTrainerAvailability(req, res) {
@@ -634,7 +757,7 @@ async function createTrainerAvailability(req, res) {
     await client.query(
       `INSERT INTO trainer_availability(trainer_id, status, date, start_time, end_time) 
       VALUES ${availabilities.map((_, index) => `($${index * 5 + 1}, $${index * 5 + 2}, $${index * 5 + 3}, $${index * 5 + 4}, $${index * 5 + 5})`).join(', ')}
-      RETURNING trainer_id, status, date, start_time, end_time`,
+      RETURNING id, trainer_id, status, date, start_time, end_time`,
       availabilities.flatMap(availability => [availability.trainer_id, availability.status, availability.date, availability.start_time, availability.end_time])
     );
 
@@ -644,7 +767,6 @@ async function createTrainerAvailability(req, res) {
     res.status(500).json({ error: 'Internal Server Error' });
   }
 }
-
 
 app.patch("/trainer_availability/:id", patchTrainerAvailability);
 async function patchTrainerAvailability(req, res) {
@@ -682,6 +804,60 @@ async function deleteAvailability(req, res) {
   } finally {
     if (data.rowCount == 0) { res.status(404).json({ error: "Trainer availability does not exist." }); }
     else { res.status(200).json({confirmation: "Trainer availability deleted." }); }
+  }
+}
+
+// EXPERTISE CRUD
+app.get("/expertise", getTrainerExpertise);
+async function getTrainerExpertise(req, res) {
+  Logger.getRequestReceived();
+
+  let data;
+  try {
+    data = await client.query("SELECT * FROM expertise;");
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Internal Server Error' });
+  } finally {
+    res.status(200).json({ expertise: data.rows });
+  }
+}
+
+app.post("/expertise", createTrainerExpertise);
+async function createTrainerExpertise(req, res) {
+  Logger.postRequestReceived();
+
+  const { expertise, trainer_id, description } = req.body;
+  let data;
+
+  try {
+    data = await client.query(
+      "INSERT INTO expertise(expertise, trainer_id, description) VALUES ($1, $2, $3) RETURNING id, expertise, trainer_id, description", 
+      [expertise, trainer_id, description]
+    );
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Internal Server Error' })
+  } finally {
+    res.status(200).json({ expertise: data.rows[0]} )
+  }
+}
+
+app.delete("/expertise/:id", deleteExpertise);
+async function deleteExpertise(req, res) {
+  Logger.deleteRequestReceived();
+
+  let data;
+  try {
+    data = await client.query(
+      "DELETE FROM expertise WHERE id = $1;", 
+      [req.params.id]);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Internal Server Error' })
+  } finally {
+    if (data.rowCount == 0) { res.status(404).json({ error: "Expertise entry does not exist." }); }
+    else { res.status(200).json({ confirmation: "Expertise entry deleted." }); }
   }
 }
 
@@ -736,16 +912,17 @@ async function getEquipment(req, res) {
   }
 }
 
-// as of now, only used for changing maintenance_status on equipment
 app.patch("/equipment/:id", patchEquipment);
 async function patchEquipment(req, res) {
   Logger.postRequestReceived();
-  
+
+    const { maintenance_status } = req.body;
     let data;
     try {
       data = await client.query(
-        `UPDATE equipment SET maintenance_status = $1 WHERE id = $2;`, 
-        [req.body[0], req.params.id]);
+        `UPDATE equipment SET maintenance_status = $2 WHERE id = $1;`, 
+        [req.params.id, maintenance_status]
+      );
     } catch (err) {
       console.error(err);
       res.status(500).json({ error: 'Internal Server Error' });
@@ -754,8 +931,6 @@ async function patchEquipment(req, res) {
       else { res.status(200).json({confirmation: "Equipment updated." }); }
     }
 }
-
-
 
 // app.post("/rooms", createRoom);
 // async function createRoom(req, res) {

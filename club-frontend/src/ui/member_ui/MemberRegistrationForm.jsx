@@ -4,19 +4,21 @@ import { useNavigate } from 'react-router-dom';
 import { useAppState } from '../../AppState.jsx';
 import { updateUserRole }  from '../../util/helper.js';
 
-export default function MemberRegistrationForm(props) {
-  MemberRegistrationForm.propTypes = {
-    user_id: Number
-  }
+export default function MemberRegistrationForm({ setMemRegToggle }) {
+  // MemberRegistrationForm.propTypes = {
+  //   user_id: Number
+  // }
 
-  const { dispatch } = useAppState();
+  const { state, dispatch } = useAppState();
   const navigate = useNavigate();
 
+  const user = state.user;
   const [memberData, setMemberData] = useState(null);
   const [membershipFormData, setMembershipFormData] = useState({
     gender: '',
     birth_date: 'YYYY-MM-DD',
-    weight: 0
+    weight: 0,
+    height: 0
   });
 
   useEffect(() => {
@@ -33,7 +35,8 @@ export default function MemberRegistrationForm(props) {
           user_id: memberData.user_id,
           gender: memberData.gender,
           birth_date: memberData.birth_date,
-          weight: memberData.weight
+          weight: memberData.weight,
+          height: memberData.height
         }
       }});
 
@@ -55,10 +58,11 @@ export default function MemberRegistrationForm(props) {
 
   function submitMemberRegistration() {
     return axios.post('http://localhost:3000/members', {
-      user_id: props.user_id,
+      user_id: user.id,
       gender: membershipFormData.gender,
       birth_date: membershipFormData.birth_date,
-      weight: membershipFormData.weight
+      weight: membershipFormData.weight,
+      height: membershipFormData.height
     })
     .then(response => {
       console.log('Membership registration successful:', response);
@@ -71,7 +75,7 @@ export default function MemberRegistrationForm(props) {
 
   return (
     <form onSubmit={handleSubmit}>
-      <div>
+      <div className='innerRegForm'>
         <div>
           <label>Birth date:</label>
           <input type="text" name="birth_date" value={membershipFormData.birth_date} onChange={handleChange}/>
@@ -92,8 +96,16 @@ export default function MemberRegistrationForm(props) {
           <input type="number" name="weight" value={membershipFormData.weight} onChange={handleChange}/>
         </div>
 
-        <button type="submit">Submit</button>
-       </div>
+        <div>
+          <label>Height (cm):</label>
+          <input type="number" name="height" value={membershipFormData.height} onChange={handleChange}/>
+        </div>
+
+        <div className='formButtons'>
+          <button type="submit">Submit</button>
+          <button onClick={() => setMemRegToggle(false)}>Close</button>
+        </div>
+      </div>
     </form>
   )
 }

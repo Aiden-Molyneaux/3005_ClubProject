@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAppState } from '../AppState.jsx';
 import AdminDashboard from './AdminDashboard.jsx';
@@ -6,7 +6,7 @@ import MemberDashboard from './member_ui/MemberDashboard.jsx';
 import TrainerDashboard from './trainer_ui/TrainerDashboard.jsx';
 
 export default function Dashboard() {
-  const { state } = useAppState();
+  const { state, dispatch } = useAppState();
   const navigate = useNavigate();
 
   const user = state.user;
@@ -20,20 +20,20 @@ export default function Dashboard() {
     }
   }, []);
 
+  function logout() {
+    dispatch({ type: 'logout', payload: {} });
+    navigate('/auth/login')
+  } 
+
   return (
     <>
-      <h1>Hi {user.first_name}, welcome to your {user.role} dashboard!</h1>
-      { (role == 'admin') && 
-        <AdminDashboard/>
-      }
-
-      { (role == 'member') &&
-        <MemberDashboard/>
-      }
-
-      { (role == 'trainer') &&
-        <TrainerDashboard/>
-      }
+      <div className='dashboardLogoutBanner bottomMargin'>
+        <h3>Hi {user.first_name}, welcome to your {user.role} dashboard!</h3>
+        <button onClick={() => logout()}>Logout?</button>
+      </div>
+      { (role == 'admin') && <AdminDashboard/> }
+      { (role == 'member') && <MemberDashboard/> }
+      { (role == 'trainer') && <TrainerDashboard/> }
     </>
   );
 }

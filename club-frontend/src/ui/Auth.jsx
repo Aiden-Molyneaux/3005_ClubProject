@@ -6,11 +6,11 @@ import { useAppState } from '../AppState.jsx';
 function Auth() {
   const [loginFormData, setLoginFormData] = useState({
     username: '',
-    password: '1'
+    password: ''
   });
   const [signupFormData, setSignupFormData] = useState({
     username: '',
-    password: '1',
+    password: '',
     first_name: '',
     last_name: '',
     email: '@hotmail.com'
@@ -100,7 +100,9 @@ function Auth() {
   return (
     <>
       {authType == 'login' &&
-        <form onSubmit={handleSubmit}>
+        <form className='authForm' onSubmit={handleSubmit}>
+          <h3>Sign-in</h3>
+          <div className='horizontalLine'></div>
           <div>
             <label>Username:</label>
             <input type="text" name="username" value={loginFormData.username} onChange={handleChange}/>
@@ -111,17 +113,23 @@ function Auth() {
             <input type="text" name="password" value={loginFormData.password} onChange={handleChange}/>
           </div>
 
-          <button type="submit">Login-in</button>
-          <button onClick={() => setAuthType('signup')}>
-            <Link to="/auth/signup">or Sign-up</Link>
-          </button>
+          <button className='topMargin' type="submit">Login-in</button>
           
+          <>
+            <div className='horizontalLine'></div>
+            <button className='topMargin' onClick={() => setAuthType('signup')}>
+              <Link to="/auth/signup">or Sign-up</Link>
+            </button>
+          </>
+
           {error && <p>{error}</p>}
         </form>
       }
 
       {authType == 'signup' &&
-        <form onSubmit={handleSubmit}>
+        <form className='authForm' onSubmit={handleSubmit}>
+          <h3>Sign-up</h3>
+          <div className='horizontalLine'></div>
           <div>
             <label>Username:</label>
             <input type="text" name="username" value={signupFormData.username} onChange={handleChange}/>
@@ -147,10 +155,15 @@ function Auth() {
             <input type="text" name="email" value={signupFormData.email} onChange={handleChange}/>
           </div>
 
-          <button type="submit">Sign-up</button>
-          <button onClick={() => setAuthType('login')}>
-            <Link to="/auth/login">or Login</Link>
-          </button>
+          <button className='topMargin' type="submit">Sign-up</button>
+
+          <>
+            <div className='horizontalLine'></div>
+            <button className='topMargin' onClick={() => setAuthType('login')}>
+              <Link to="/auth/login">or Login</Link>
+            </button>
+          </>
+
           {error && <p>{error}</p>}
         </form>
       }

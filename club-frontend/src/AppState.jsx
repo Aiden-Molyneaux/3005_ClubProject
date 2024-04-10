@@ -11,7 +11,7 @@ function reducer(state, action) {
     case 'logout':
       window.localStorage.removeItem('auth');
 
-      newState = { ...state, user: null };
+      newState = {};
       return newState;
     case 'user_updated':
       auth = JSON.parse(window.localStorage.getItem('auth'));

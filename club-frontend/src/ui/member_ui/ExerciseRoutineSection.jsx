@@ -68,31 +68,33 @@ export default function ExerciseRoutineSection() {
 
   const form_UI = (
     <form onSubmit={handleSubmit}>
+      <div className='horizontalLine'></div>
       <div>
         <label htmlFor='description'>Routine description:</label>
         <input type='text' name='description' value={formData.description} onChange={handleChange}></input>
       </div>
 
-      <button type='submit'>Submit</button>
+      <button className='rightMargin' type='submit'>Submit</button>
       <button onClick={() => setFormToggle(false)}>Close</button>
     </form>
   );
 
-
   const noRoutines = routines.length == 0;
 
   return (
-    <>
-      <h2>Exercise Routines</h2>
-      <div>
+    <div className='healthAnalyticsSection'>
+      <h3>Exercise Routines</h3>
+      <div className='horizontalLine'></div>
+      <div className='goalSection'>
         { noRoutines
          ? <h4>You currently have no exercise routines</h4>
          : <>
             { routines && routines[0].description && routines.map((routine, index) => (
               <div key={index}> 
-                <h3>Routine #{index+1}:</h3>
-                <h4>{routine.description}</h4>
-                <button onClick={() => deleteRoutine(routine.id)}>Delete</button>
+                <h4 className='underline'>Routine #{index+1}</h4>
+                <label>{routine.description}</label>
+                <br/>
+                <button className='topMargin' onClick={() => deleteRoutine(routine.id)}>Delete</button>
               </div>
             ))}
           </>
@@ -101,8 +103,8 @@ export default function ExerciseRoutineSection() {
 
       { formToggle
         ? form_UI
-        : <button onClick={() => setFormToggle(true)}>Add Routine</button>
+        : <button className='topMargin' onClick={() => setFormToggle(true)}>Add Routine</button>
       }
-    </>
+    </div>
   );
 }

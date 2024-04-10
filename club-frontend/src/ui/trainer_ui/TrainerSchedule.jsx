@@ -1,23 +1,35 @@
 import axios from 'axios';
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { useAppState } from '../../AppState.jsx';
+import { updateTrainerAvailability } from '../../util/helper.js';
+import { getTrainerAvailability } from '../../util/helper.js';
 
-export default function TrainerSchedule({ trainer_prop, availability_prop }) {
-  const { state, dispatch } = useAppState();
+export default function TrainerSchedule({ reload }) {
+  const { state } = useAppState();
 
-  const [trainer, setTrainer] = useState(trainer_prop);
-  const [availabilities, setAvailabilities] = useState(availability_prop);
+  const trainer = state.trainer;
+  const [trainerAvailabilities, setTrainerAvailabilities] = useState([]);
 
   const [dates, setDates] = useState({}); 
+  const [reloadFlag, setReloadFlag] = useState(false);
 
   const [formData, setFormData] = useState({
     date: ''
   });
 
   useEffect(() => {
-    if (availabilities) {
-      const sortedAvailabilities = availabilities.sort((a, b) => a.id - b.id);
+    if (trainer) {
+      getTrainerAvailability(trainer.id).then((availability) => {
+        if (availability && availability.length > 0) {
+          setTrainerAvailabilities(availability);
+        }
+      });
+    }
+  }, [trainer, reloadFlag, reload]);
+
+  useEffect(() => {
+    if (trainerAvailabilities) {
+      const sortedAvailabilities = trainerAvailabilities.sort((a, b) => a.id - b.id);
       const newDates = {};
       sortedAvailabilities.forEach((availability) => {
         newDates[availability.date] = availability.date;
@@ -27,7 +39,7 @@ export default function TrainerSchedule({ trainer_prop, availability_prop }) {
       const initialDate = Object.keys(newDates)[0];
       setFormData({ date: initialDate });
     }
-  }, [availabilities]);
+  }, [trainerAvailabilities]);
 
   function handleChange(event) {
     setFormData({ ...formData, [event.target.name] : event.target.value });
@@ -39,40 +51,56 @@ export default function TrainerSchedule({ trainer_prop, availability_prop }) {
     })
     .then(response => {
       console.log('Trainer availability updated successfully:', response);
-
-      let newAvailabilities = availabilities.filter(availability => availability.id !== availability_id);
-      newAvailabilities.push(response.data.trainer_availability);
-      newAvailabilities = newAvailabilities.sort((a, b) => a.id - b.id)
-
-      setAvailabilities(newAvailabilities);
+      setReloadFlag(!reloadFlag);
     })
     .catch(error => {
       console.error('Trainer availability update error:', error);
     })
   }
 
-  function cancelTrainingSession() {}
+  function cancelSession(training_session_id, availability_id) {
+    deleteTrainingSession(training_session_id).then(() => {
+      updateTrainerAvailability(availability_id, 'available').then(() => {
+        setReloadFlag(!reloadFlag);
+      });
+    })
+  }
+
+  function deleteTrainingSession(training_session_id) {
+    return axios.delete(`http://localhost:3000/training_sessions/${training_session_id}`)
+    .then(response => {
+      console.group('Training session deleted successfully:', response.data);
+      return true;
+    })
+    .catch(error => {
+      console.error('Training session delete error:', error);
+    })
+  }
 
   return (
     <>
       { dates &&
-      <>
-        <label>Date</label>
-        <select name="date" value={formData.date} onChange={handleChange}>
-          {Object.keys(dates).map(date => (
-            <option key={date} value={date}>{dates[date].split('T')[0]}</option>
-          ))}
-        </select>
+      <div className='healthAnalyticsSection'>
+        <h3>Manage your Schedule</h3>
+        <div className='horizontalLine'></div>
+        <div> 
+          <label>Date: </label>
+          <select name="date" value={formData.date} onChange={handleChange}>
+            {Object.keys(dates).map(date => (
+              <option key={date} value={date}>{dates[date].split('T')[0]}</option>
+            ))}
+          </select>
+        </div>
         <table>
           <thead>
             <tr>
-              <th>Start time</th>
-              <th>End time</th>
-              <th>Status</th>
+              <th className='underline'>Start time</th>
+              <th className='underline'>End time</th>
+              <th className='underline'>Status</th>
             </tr>
           </thead>
           <tbody>
-            { availabilities
+            { trainerAvailabilities && trainerAvailabilities
               .filter(availability => availability.date === formData.date)
               .sort((a, b) => a.id - b.id)
               .map((availability, index) => (
@@ -85,16 +113,15 @@ export default function TrainerSchedule({ trainer_prop, availability_prop }) {
                       ? <button onClick={() => setAvailability(availability.id, 'unavailable')}>Set to unavailable</button>
                       : availability.status == 'unavailable'
                         ? <button onClick={() => setAvailability(availability.id, 'available')}>Set to available</button>
-                        : <button onClick={() => cancelTrainingSession(availability.id)}>Cancel session</button>
+                        : <button onClick={() => cancelSession(availability.training_session_id, availability.id)}>Cancel session</button>
                     }
-                    
                   </td>
                 </tr>
               ))
             }
           </tbody>
         </table>
-      </>
+      </div>
     }
     </>
   );

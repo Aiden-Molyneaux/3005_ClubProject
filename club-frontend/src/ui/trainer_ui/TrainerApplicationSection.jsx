@@ -1,24 +1,22 @@
 import axios from 'axios';
 import { useState, useEffect } from 'react';
-import { useAppState } from '../../AppState.jsx';
 import { getTrainerAppsWithUserInfo, updateTrainerAppStatus, updateUserRole } from '../../util/helper.js';
 
 export default function TrainerApplicationSection() {
-  const { state, dispatch } = useAppState();
-
   const [applications, setApplications] = useState([]);
+  const [reloadAppsFlag, setReloadAppsFlag] = useState(false);
 
   useEffect(() => {
     getTrainerAppsWithUserInfo().then((trainer_applications) => {
       if (trainer_applications) {
         let unconfirmedApplications = trainer_applications.filter(application => 
-          application.status == null
+          application.status == 'Awaiting'
         );
 
         setApplications(unconfirmedApplications);
       }
     })
-  }, []);
+  }, [reloadAppsFlag]);
 
   function approveTrainer(application) {
     updateTrainerAppStatus(application.id, 'Approved');
@@ -32,7 +30,8 @@ export default function TrainerApplicationSection() {
       console.group('Trainer successfully created:', response.data);
       const trainer = response.data.trainer; 
       createTrainerAvailabilitySlots(trainer, application);
-      
+      setReloadAppsFlag(!reloadAppsFlag);
+
       return trainer;
     })
     .catch(error => {
@@ -47,6 +46,7 @@ export default function TrainerApplicationSection() {
     })
     .then(response => {
       console.group('Trainer availability successfully created:', response.data);
+      setReloadAppsFlag(!reloadAppsFlag);
     })
     .catch(error => {
       console.error('Trainer availability creation error:', error);
@@ -54,17 +54,18 @@ export default function TrainerApplicationSection() {
   }
 
   function denyTrainer(application) {
-    updateTrainerAppStatus(application.id, 'Denied');
+    updateTrainerAppStatus(application.id, 'Denied').then(() => setReloadAppsFlag(!reloadAppsFlag));
   }
 
-  const no_applications = applications.length == 0 ? true : false;
+  const no_applications = applications.length == 0;
 
   return (
-    <>
-      <h3>Active Trainer Applications:</h3>
+    <div className='healthAnalyticsSection'>
+      <h3>Active Trainer Applications</h3>
+      <div className='horizontalLine'></div>
       { no_applications
         ? <h6>There are no active applications</h6>
-        : <table>
+        : <table className='topMargin'>
             <thead>
               <tr>
                 <th>Application ID</th>
@@ -86,7 +87,7 @@ export default function TrainerApplicationSection() {
                   <td>{application.resume}</td>
                   <td>{application.availability_type}</td>
                   <td>
-                    <button onClick={() => approveTrainer(application)}>Yes</button>
+                    <button className='rightMargin' onClick={() => approveTrainer(application)}>Yes</button>
                     <button onClick={() => denyTrainer(application)}>No</button>
                   </td>
                 </tr>
@@ -94,7 +95,7 @@ export default function TrainerApplicationSection() {
             </tbody>
           </table>
       }
-    </>
+    </div>
 
   );
 }

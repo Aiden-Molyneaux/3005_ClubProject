@@ -1,17 +1,10 @@
 import axios from 'axios';
-import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useState } from 'react';
 import { useAppState } from '../../AppState.jsx';
-import ProfileManager from '../ProfileManager.jsx';
 
-export default function TrainerProfileManager({ trainer_prop, availability_prop }) {
+export default function TrainerProfileManager({ reloadTrainerSchedule }) {
   const { state, dispatch } = useAppState();
-
-  const [trainer, setTrainer] = useState(trainer_prop);
-
-  console.log({trainer})
-  
-  const [availabilities, setAvailabilities] = useState(availability_prop);
+  const [trainer, setTrainer] = useState(state.trainer);
   const [formData, setFormData] = useState({
     availability_type: trainer.availability_type
   });
@@ -26,10 +19,12 @@ export default function TrainerProfileManager({ trainer_prop, availability_prop 
       setTrainer(trainer);
       dispatch({ type: 'resource_fetched', payload: {trainer} });
 
-      console.log({trainer})
-
-      deletePreviousAvailabilities().then(() => {
-        createNewAvailabilities();
+      deleteTrainingSessions(trainer.id).then(() => {
+        deletePreviousAvailabilities().then(() => {
+          createNewAvailabilities().then(() => {
+            reloadTrainerSchedule();
+          });
+        });
       });
     });
   }
@@ -39,19 +34,11 @@ export default function TrainerProfileManager({ trainer_prop, availability_prop 
       availability_type: formData.availability_type
     })
     .then(response => {
-      console.log('Trainer availability updated successfully:', response);
-
-      /*
-      -> trainer updates their availability type
-      -> update trainer entity
-      -> delete trainer's trainer_availability entries
-      -> populate trainer_availability with new trainer_availability entries
-      */
-
+      console.log('Trainers availability_type updated successfully:', response);
       return response.data.trainer;
     })
     .catch(error => {
-      console.error('Trainer availability update error:', error);
+      console.error('Trainers availability_type update error:', error);
     })
   }
 
@@ -59,7 +46,6 @@ export default function TrainerProfileManager({ trainer_prop, availability_prop 
     return axios.delete(`http://localhost:3000/trainer_availability/${trainer.id}`)
     .then(response => {
       console.log('Trainer availability deleted successfully:', response);
-
       return response;
     })
     .catch(error => {
@@ -68,24 +54,39 @@ export default function TrainerProfileManager({ trainer_prop, availability_prop 
   }
 
   function createNewAvailabilities() {
-    axios.post('http://localhost:3000/trainer_availability', {
+    return axios.post('http://localhost:3000/trainer_availability', {
       trainer_id: trainer.id,
       availability_type: formData.availability_type
     })
     .then(response => {
       console.log('Trainer availabilities created successfully:', response);
+      return true;
     })
     .catch(error => {
       console.error('Trainer availability update error:', error);
     })
   }
 
-  console.log(availabilities);
+  function deleteTrainingSessions(trainer_id) {
+    console.log({trainer});
+    return axios.delete('http://localhost:3000/training_sessions_by_trainer', {
+      params: {
+        trainer_id: trainer_id
+      }
+    })
+    .then(response => {
+      console.log('Training session deleted successfully:', response);
+      return response;
+    })
+    .catch(error => {
+      console.error('Training session update error:', error);
+    })
+  }
 
   return (
-    <>
-      <ProfileManager/>
-
+    <div className='healthAnalyticsSection'>
+      <h3>Manage your Schedule and Availability</h3>
+      <div className='horizontalLine'></div>
       <form onSubmit={handleSubmit}>
         <div>
           <label>Availability:</label>
@@ -96,8 +97,8 @@ export default function TrainerProfileManager({ trainer_prop, availability_prop 
           </select>
         </div>
 
-        <button type="submit">Save availability</button>
+        <button className='topMargin' type="submit">Save availability</button>
       </form>
-    </>
+    </div>
   );
 }

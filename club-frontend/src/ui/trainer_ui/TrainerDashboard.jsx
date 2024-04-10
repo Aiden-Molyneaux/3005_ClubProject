@@ -1,36 +1,26 @@
-import axios from 'axios';
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { useAppState } from '../../AppState.jsx';
 import { getTrainer } from '../../util/helper.js';
-import { getTrainerAvailability } from '../../util/helper.js';
 import TrainerProfileManager from './TrainerProfileManager.jsx';
+import TrainerExpertiseSection from './TrainerExpertiseSection.jsx';
 import TrainerSchedule from './TrainerSchedule.jsx';
+import ProfileManager from '../ProfileManager.jsx';
 
 export default function TrainerDashboard() {
   const { state, dispatch } = useAppState();
-  const navigate = useNavigate();
 
   const user = state.user;
-  const [trainer, setTrainer] = useState(state.trainer);
+  const trainer = state.trainer;
 
-  const [availabilities, setAvailabilities] = useState(null);
-  const [profileToggle, setProfileToggle] = useState(true);
+  const [reloadSchedule, setReloadSchedule] = useState(false);
 
-  useEffect(() => {
-    if (trainer) {
-      getTrainerAvailability(trainer.id).then((availability) => {
-        if (availability) {
-          setAvailabilities(availability);
-        }
-      });
-    }
-  }, [trainer]);
+  function reloadTrainerSchedule() {
+    setReloadSchedule(!reloadSchedule);
+  }
 
   useEffect(() => {
     getTrainer(user.id).then((trainer) => {
       if (trainer) {
-        setTrainer(trainer);
         dispatch({ type: 'resource_fetched', payload: {trainer} })
       }
     });
@@ -38,18 +28,17 @@ export default function TrainerDashboard() {
 
   return (
     <>
-      <h3>Your Trainer Hub</h3>
-      {trainer && availabilities &&
-        <>
-          <TrainerProfileManager
-            trainer_prop={trainer}
-            availability_prop={availabilities}
-          />
-          <TrainerSchedule
-            trainer_prop={trainer}
-            availability_prop={availabilities}
-          />  
-        </>
+      {trainer &&
+        <div>
+          <div className='memberProfileSection noTopMargin'>
+            <ProfileManager/>
+            <TrainerProfileManager reloadTrainerSchedule={reloadTrainerSchedule}/>
+          </div>
+          <div className='memberProfileSection'>
+            <TrainerSchedule reload={reloadSchedule}/>
+            <TrainerExpertiseSection/>
+          </div>
+        </div>
       }
     </>
   );

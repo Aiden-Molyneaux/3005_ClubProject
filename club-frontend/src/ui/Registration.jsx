@@ -30,15 +30,13 @@ export default function Registration() {
 
   const openMemRegForm = (
     <div>
-      <MemberRegistrationForm user_id={user.id}/>
-      <button onClick={() => setMemRegToggle(false)}>Close</button>
+      <MemberRegistrationForm setMemRegToggle={setMemRegToggle}/>
     </div>
   );
 
   const openTrainerRegForm = (
     <div>
-      <TrainerRegistrationForm/>
-      <button onClick={() => setTrainerRegToggle(false)}>Close</button>
+      <TrainerRegistrationForm setTrainerRegToggle={setTrainerRegToggle}/>
     </div>
   );
 
@@ -52,36 +50,37 @@ export default function Registration() {
     }
   }
 
+  function logout() {
+    dispatch({ type: 'logout', payload: {} });
+    navigate('/auth/login');
+  } 
+
   return (
     <>
-      <h1>Hi, {user.first_name}</h1>
-        <div>
+      <div className='regLogoutBanner bottomMargin'>
+        <h3>Hi {user.first_name}, </h3>
+        <button onClick={() => logout()}>Logout?</button>
+      </div>
+
+      <div className='healthAnalyticsSection'>
         <h3>Register for a Membership</h3>
+        <div className='horizontalLine'></div>
         { memRegToggle
           ? openMemRegForm
-          : <button onClick={() => toggleForms('member')}>Register</button>
+          : <button className='topMargin' onClick={() => toggleForms('member')}>Register</button>
         }
+
+        <h2>OR</h2>
         
         <h3>Request a Trainer position</h3>
+        <div className='horizontalLine'></div>
         { trainer_application 
           ? <h6>You have successfully submitted an application</h6>
           : trainerRegToggle
             ? openTrainerRegForm
-            : <button onClick={() => toggleForms('trainer')}>Apply</button>
+            : <button className='topMargin' onClick={() => toggleForms('trainer')}>Apply</button>
         }
       </div>
     </>
   );
 }
-
-/*
--> non-member requests trainer position
--> attaches a resume -- resume can be included on trainer table
--> optional, include expertise
--> admin is required to approve or deny application
-
-- need new relation, trainer_applications
-- trainer applications are hosted on the admin page
-
-- under the "Request a Trainer position" there will be a section for previous applications and the status
-*/

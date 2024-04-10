@@ -4,11 +4,11 @@ import { Routes, Route, useNavigate } from 'react-router-dom';
 import Auth from './ui/Auth.jsx';
 import Registration from './ui/Registration.jsx';
 import Dashboard from './ui/Dashboard.jsx';
+import Header from './ui/Header.jsx'
 import Footer from './ui/Footer.jsx';
 
 function App() {
   const navigate = useNavigate();
-
   
   React.useEffect(() => {
     const auth = JSON.parse(window.localStorage.getItem('auth'));
@@ -25,13 +25,19 @@ function App() {
 
   return (
     <>
-      <Routes>
-        <Route path="/auth/login" element={<Auth/>}></Route>
-        <Route path="/auth/signup" element={<Auth/>}></Route>
-        <Route path="/registration" element={<Registration/>}></Route>
-        <Route path="/dashboard" element={<Dashboard/>}></Route>
-        <Route path="/member/schedule" element={<Dashboard/>}></Route>
-      </Routes>
+      <Header/>
+      <main>
+        <div className='innerContainer'>
+          <Routes>
+            <Route path="/auth/login" element={<Auth/>}></Route>
+            <Route path="/auth/signup" element={<Auth/>}></Route>
+            <Route path="/registration" element={<Registration/>}></Route>
+            <Route path="/dashboard" element={<Dashboard/>}></Route>
+            <Route path="/member/schedule" element={<Dashboard/>}></Route>
+          </Routes>
+        </div>
+      </main>
+
       <Footer/>
     </>
   );

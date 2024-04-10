@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useAppState } from '../AppState.jsx';
 
 export default function ProfileManager() {
@@ -45,8 +45,10 @@ export default function ProfileManager() {
   }
 
   return (
-    <>
+    <div className='healthAnalyticsSection'>
       <form onSubmit={handleSubmit}>
+        <h3>Manage your Personal Profile</h3>
+        <div className='horizontalLine'></div>
         <div>
           <label>Username:</label>
           <input type="text" name="username" value={formData.username} onChange={handleChange}/>
@@ -67,8 +69,8 @@ export default function ProfileManager() {
           <input type="text" name="email" value={formData.email} onChange={handleChange}/>
         </div>
 
-        <button type="submit">Save personal profile</button>
+        <button className='topMargin' type="submit">Save personal profile</button>
       </form>
-    </>
+    </div>
   );
 }

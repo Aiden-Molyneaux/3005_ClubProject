@@ -46,6 +46,17 @@ async function getTrainer(user_id) {
   })
 }
 
+async function getAllTrainersWithUserInfo() {
+  return axios.get('http://localhost:3000/trainers_with_user')
+  .then(response => {
+    console.log('Trainers with user info fetched successfully:', response);
+    return response.data.trainers_with_user || null;
+  })
+  .catch(error => {
+    console.error('Trainers with user info fetch error:', error);
+  })
+}
+
 async function getTrainerAppsWithUserInfo() {
   return axios.get('http://localhost:3000/trainer_applications_with_user')
   .then(response => {
@@ -54,6 +65,44 @@ async function getTrainerAppsWithUserInfo() {
   })
   .catch(error => {
     console.error('Trainer applications and user info fetch error:', error);
+  })
+}
+
+async function getTrainersWithAvailability() {
+  return getAllTrainersWithUserInfo().then((trainers_with_user) => {
+    return getAllTrainerAvailability().then((availabilities) => {
+      let trainers_with_availability = {};
+
+      for(const trainer of trainers_with_user) {
+        trainers_with_availability[trainer.trainer_id] = {
+          trainer: {
+            trainer_id: trainer.trainer_id,
+            first_name: trainer.first_name,
+            last_name: trainer.last_name
+          },
+          availabilities: {}
+        }
+        for (const availability of availabilities) {
+          if (trainer.trainer_id == availability.trainer_id) {
+            // Check if the date key exists, if not, initialize it with an empty array
+            if (!trainers_with_availability[trainer.trainer_id].availabilities[availability.date]) {
+              trainers_with_availability[trainer.trainer_id].availabilities[availability.date] = [];
+            }
+
+            // Push availability to the array under the date key
+            trainers_with_availability[trainer.trainer_id].availabilities[availability.date].push({
+              availability_id: availability.id,
+              start_time: availability.start_time,
+              end_time: availability.end_time,
+              status: availability.status,
+              date: availability.date
+            });
+          }
+        }
+      }
+
+      return trainers_with_availability;
+    })
   })
 }
 
@@ -75,11 +124,12 @@ async function getTrainerApplication(user_id) {
 }
 
 async function updateTrainerAppStatus(app_id, newStatus) {
-  axios.patch(`http://localhost:3000/trainer_applications/${app_id}`, {
+  return axios.patch(`http://localhost:3000/trainer_applications/${app_id}`, {
     status: newStatus,
   })
   .then(response => {
     console.log('Trainer application successfully updated:', response);
+    return true;
   })
   .catch(error => {
     console.error('Trainer application update error:', error);
@@ -132,9 +182,11 @@ async function getMemberTrainingSessions(member_id) {
     const formatted_sessions = training_sessions.map((session) => {
       return {
         id: session.training_session_id,
-        timeslot: session.timeslot,
-        session_length: session.session_length,
         room_id: session.room_id,
+        availability_id: session.availability_id,
+        date: session.date,
+        start_time: session.start_time,
+        end_time: session.end_time,
         trainer: {
           id: session.trainer_id,
           user_id: session.user_id,
@@ -153,21 +205,57 @@ async function getMemberTrainingSessions(member_id) {
   })
 }
 
-async function getTrainerAvailability(trainer_id) {
+async function getAllTrainerAvailability() {
   return axios.get('http://localhost:3000/trainer_availability')
   .then(response => {
     console.log('Trainer availabilities fetched successfully:', response);
 
-    let trainer_availability = response.data.trainer_availabilities;
-    if (trainer_availability !== null && trainer_availability.length > 0) {
-      trainer_availability = trainer_availability.filter(availability => availability.trainer_id == trainer_id);
-      return trainer_availability;
-    }
-
-    return [];
+    return response.data.trainer_availabilities || [];
   })
   .catch(error => {
     console.error('Trainer availabilities fetch error:', error);
+  })
+}
+
+async function getTrainerAvailability(trainer_id) {
+  return axios.get('http://localhost:3000/trainer_availability_with_trains', {
+    params: {
+      trainer_id: trainer_id
+    }
+  })
+  .then(response => {
+    console.log('Trainer availabilities with trains fetched successfully:', response);
+
+    return response.data.trainer_availabilities || [];
+  })
+  .catch(error => {
+    console.error('Trainer availabilities with trains fetch error:', error);
+  })
+}
+
+async function updateTrainerAvailability(availability_id, newStatus) {
+  // THIS FUNCTION SHOULD BE USED IN TrainerSchedule.jsx as well
+  return axios.patch(`http://localhost:3000/trainer_availability/${availability_id}`, {
+    status: newStatus
+  })
+  .then(response => {
+    console.log('Trainer availability successfully updated:', response);
+    return response;
+  })
+  .catch(error => {
+    console.error('Trainer availability update error:', error);
+  })
+}
+
+async function getTrainerExpertise(trainer_id) {
+  return axios.get('http://localhost:3000/expertise')
+  .then(response => {
+    console.log('Trainer expertise fetched successfully:', response);
+    const trainer_expertise = response.data.expertise.filter(expertise => expertise.trainer_id == trainer_id);
+    return trainer_expertise || [];
+  })
+  .catch(error => {
+    console.error('Trainer expertise fetch error:', error);
   })
 }
 
@@ -176,11 +264,15 @@ export {
   getMember, 
   getTrainer,
   getTrainerApplication, 
-  getTrainerAppsWithUserInfo, 
+  getTrainerAppsWithUserInfo,
+  getTrainersWithAvailability,
   getEquipment,
   updateTrainerAppStatus,
   getMemberFitnessGoals,
   getMemberExerciseRoutines,
   getMemberTrainingSessions,
-  getTrainerAvailability
+  getAllTrainerAvailability,
+  getTrainerAvailability,
+  updateTrainerAvailability,
+  getTrainerExpertise
 };

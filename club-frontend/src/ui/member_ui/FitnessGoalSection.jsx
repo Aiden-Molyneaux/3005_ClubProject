@@ -1,14 +1,10 @@
 import axios from 'axios';
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { useAppState } from '../../AppState.jsx';
 import { getMemberFitnessGoals } from '../../util/helper.js';
 
 export default function FitnessGoalSection() {
-  const { state, dispatch } = useAppState();
-  const navigate = useNavigate();
-
-  const user = state.user;
+  const { state } = useAppState();
   const member = state.member;
 
   const [goals, setGoals] = useState([]);
@@ -19,9 +15,7 @@ export default function FitnessGoalSection() {
     if (member && member.id) {
       getMemberFitnessGoals(member.id).then((goals) => {
         if (goals) {
-          let goals_to_display = goals.filter(goal => goal.display == true );
-
-          setGoals(goals_to_display);
+          setGoals(goals);
         }
       });
     }
@@ -46,7 +40,6 @@ export default function FitnessGoalSection() {
       member_id: member.id,
       goal_text: formData.goal_text,
       status: false,
-      display: true,
       date_created: new Date()
     })
     .then(response => {
@@ -71,44 +64,71 @@ export default function FitnessGoalSection() {
     })
   }
 
+  function completeGoal(goal_id) {
+    axios.patch(`http://localhost:3000/fitness_goals/${goal_id}`, {
+      status: true
+    })
+    .then(response => {
+      console.log('Fitness goal successfully updated:', response);
+
+      const newGoals = goals.map((goal) => {
+        if (goal.id == goal_id) {
+          goal.status = true;
+        }
+
+        return goal;
+      });
+
+      console.log({newGoals})
+
+      setGoals(newGoals);
+    })
+    .catch(error => {
+      console.error('Fitness goal update error:', error);
+    })
+  }
 
   const form_UI = (
     <form onSubmit={handleSubmit}>
+      <div className='horizontalLine'></div>
       <div>
         <label htmlFor='goal_text'>Goal description:</label>
         <input type='text' name='goal_text' value={formData.goal_text} onChange={handleChange}></input>
       </div>
 
-      <button type='submit'>Submit</button>
-      <button onClick={() => setFormToggle(false)}>Close</button>
+      <button className='topMargin rightMargin' type='submit'>Submit</button>
+      <button className='topMargin rightMargin' onClick={() => setFormToggle(false)}>Close</button>
     </form>
   );
 
   const noGoals = goals.length == 0;
 
   return (
-    <>
-      <h2>Fitness Goals</h2>
-      <div>
+    <div className='healthAnalyticsSection bottomMargin'>
+      <h3>Fitness Goals</h3>
+      <div className='horizontalLine'></div>
+      <div className="goalSection">
         { noGoals
           ? <h4>You currently have no fitness goals</h4>
           : <> { goals && goals.map((goal, index) => (
-            <div key={index}> 
-              <h3>Goal #{index+1}:</h3>
-              <h4>{goal.goal_text}</h4>
-              <h4>Status: {goal.status ? 'Complete' : 'Working on it!'}</h4>
-              <button onClick={() => deleteGoal(goal.id)}>Delete</button>
+            <div key={index} className='goalCard'> 
+              <h4 className='underline'>Goal #{index+1}</h4>
+              <label>Description: {goal.goal_text}</label>
+              <br/>
+              <label>Status: {goal.status ? 'Complete' : 'Working on it!'}</label>
+              <br/>
+              {!goal.status && <button className='rightMargin' onClick={() => completeGoal(goal.id)}>Complete</button>}
+              <button className='topMargin' onClick={() => deleteGoal(goal.id)}>Delete</button>
             </div>
             ))}
           </>
         }
       </div>
 
-      { formToggle
+      { formToggle && goals
         ? form_UI
-        : <button onClick={() => setFormToggle(true)}>Add Goal</button>
+        : <button className='topMargin' onClick={() => setFormToggle(true)}>Add Goal</button>
       }
-      
-    </>
+    </div>
   );
 }
