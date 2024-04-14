@@ -7,41 +7,30 @@ import { getTrainerApplication } from '../util/helper.js';
 
 export default function Registration() {
   const navigate = useNavigate();
+
   const { state, dispatch } = useAppState();
+  const user = state.user ? state.user : null;
+  const trainerApplication = state.trainerApplication ? state.trainerApplication : null;
+
   const [memRegToggle, setMemRegToggle] = useState(true);
   const [trainerRegToggle, setTrainerRegToggle] = useState(false);
-
-  const user = state.user ? state.user : null;
-  const trainer_application = state.trainer_application ? state.trainer_application : null;
 
   useEffect(() => {
     if(!user) {
       navigate('/auth/login');
-    } else if (user.role != 'none') {
+    } else if (user.role !== 'none') {
       navigate('/dashboard');
     }
 
-    getTrainerApplication(user.id).then((trainer_application) => {
-      if (trainer_application) {
-        dispatch({ type: 'trainer_application_submitted', payload: {trainer_application} })
+    getTrainerApplication(user.id).then((trainerApplication) => {
+      if (trainerApplication) {
+        dispatch({ type: 'trainer_application_submitted', payload: {trainerApplication} });
       }
     });
   }, []);
 
-  const openMemRegForm = (
-    <div>
-      <MemberRegistrationForm setMemRegToggle={setMemRegToggle}/>
-    </div>
-  );
-
-  const openTrainerRegForm = (
-    <div>
-      <TrainerRegistrationForm setTrainerRegToggle={setTrainerRegToggle}/>
-    </div>
-  );
-
   function toggleForms(type) {
-    if (type == 'member') {
+    if (type === 'member') {
       setMemRegToggle(true);
       setTrainerRegToggle(false);
     } else {
@@ -58,7 +47,7 @@ export default function Registration() {
   return (
     <>
       <div className='regLogoutBanner bottomMargin'>
-        <h3>Hi {user.first_name}, </h3>
+        <h3>Hi {user.firstName}, </h3>
         <button onClick={() => logout()}>Logout?</button>
       </div>
 
@@ -66,7 +55,7 @@ export default function Registration() {
         <h3>Register for a Membership</h3>
         <div className='horizontalLine'></div>
         { memRegToggle
-          ? openMemRegForm
+          ? <MemberRegistrationForm setMemRegToggle={setMemRegToggle}/>
           : <button className='topMargin' onClick={() => toggleForms('member')}>Register</button>
         }
 
@@ -74,10 +63,10 @@ export default function Registration() {
         
         <h3>Request a Trainer position</h3>
         <div className='horizontalLine'></div>
-        { trainer_application 
+        { trainerApplication 
           ? <h6>You have successfully submitted an application</h6>
           : trainerRegToggle
-            ? openTrainerRegForm
+            ? <TrainerRegistrationForm setTrainerRegToggle={setTrainerRegToggle}/>
             : <button className='topMargin' onClick={() => toggleForms('trainer')}>Apply</button>
         }
       </div>

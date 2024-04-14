@@ -8,23 +8,22 @@ import ProfileManager from '../ProfileManager.jsx';
 
 export default function TrainerDashboard() {
   const { state, dispatch } = useAppState();
-
   const user = state.user;
   const trainer = state.trainer;
 
   const [reloadSchedule, setReloadSchedule] = useState(false);
 
-  function reloadTrainerSchedule() {
-    setReloadSchedule(!reloadSchedule);
-  }
-
   useEffect(() => {
     getTrainer(user.id).then((trainer) => {
       if (trainer) {
-        dispatch({ type: 'resource_fetched', payload: {trainer} })
+        dispatch({ type: 'resource_fetched', payload: { trainer } });
       }
     });
   }, [user.id]);
+
+  function reloadTrainerSchedule() {
+    setReloadSchedule(!reloadSchedule);
+  }
 
   return (
     <>
@@ -35,7 +34,7 @@ export default function TrainerDashboard() {
             <TrainerProfileManager reloadTrainerSchedule={reloadTrainerSchedule}/>
           </div>
           <div className='memberProfileSection'>
-            <TrainerSchedule reload={reloadSchedule}/>
+            <TrainerSchedule reloadSchedule={reloadSchedule}/>
             <TrainerExpertiseSection/>
           </div>
         </div>

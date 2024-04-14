@@ -1,21 +1,22 @@
 import axios from 'axios';
+import PropTypes from 'prop-types';
 import { useState, useEffect } from 'react';
 import { useAppState } from '../../AppState.jsx';
 import { updateTrainerAvailability } from '../../util/helper.js';
 import { getTrainerAvailability } from '../../util/helper.js';
 
-export default function TrainerSchedule({ reload }) {
+export default function TrainerSchedule({ reloadSchedule }) {
+  TrainerSchedule.propTypes = {
+    reloadSchedule: PropTypes.bool.isRequired
+  };
+
   const { state } = useAppState();
-
   const trainer = state.trainer;
-  const [trainerAvailabilities, setTrainerAvailabilities] = useState([]);
 
+  const [trainerAvailabilities, setTrainerAvailabilities] = useState([]);
   const [dates, setDates] = useState({}); 
   const [reloadFlag, setReloadFlag] = useState(false);
-
-  const [formData, setFormData] = useState({
-    date: ''
-  });
+  const [formData, setFormData] = useState({ date: '' });
 
   useEffect(() => {
     if (trainer) {
@@ -25,7 +26,7 @@ export default function TrainerSchedule({ reload }) {
         }
       });
     }
-  }, [trainer, reloadFlag, reload]);
+  }, [trainer, reloadFlag, reloadSchedule]);
 
   useEffect(() => {
     if (trainerAvailabilities) {
@@ -45,36 +46,36 @@ export default function TrainerSchedule({ reload }) {
     setFormData({ ...formData, [event.target.name] : event.target.value });
   }
 
-  function setAvailability(availability_id, status) {
-    axios.patch(`http://localhost:3000/trainer_availability/${availability_id}`, {
+  function setAvailability(availabilityId, status) {
+    axios.patch(`http://localhost:3000/trainer_availability/${availabilityId}`, {
       status: status
     })
-    .then(response => {
-      console.log('Trainer availability updated successfully:', response);
-      setReloadFlag(!reloadFlag);
-    })
-    .catch(error => {
-      console.error('Trainer availability update error:', error);
-    })
+      .then(response => {
+        console.log('Trainer availability updated successfully:', response);
+        setReloadFlag(!reloadFlag);
+      })
+      .catch(error => {
+        console.error('Trainer availability update error:', error);
+      });
   }
 
-  function cancelSession(training_session_id, availability_id) {
-    deleteTrainingSession(training_session_id).then(() => {
-      updateTrainerAvailability(availability_id, 'available').then(() => {
+  function cancelSession(trainingSessionId, availabilityId) {
+    deleteTrainingSession(trainingSessionId).then(() => {
+      updateTrainerAvailability(availabilityId, 'available').then(() => {
         setReloadFlag(!reloadFlag);
       });
-    })
+    });
   }
 
-  function deleteTrainingSession(training_session_id) {
-    return axios.delete(`http://localhost:3000/training_sessions/${training_session_id}`)
-    .then(response => {
-      console.group('Training session deleted successfully:', response.data);
-      return true;
-    })
-    .catch(error => {
-      console.error('Training session delete error:', error);
-    })
+  function deleteTrainingSession(trainingSessionId) {
+    return axios.delete(`http://localhost:3000/training_sessions/${trainingSessionId}`)
+      .then(response => {
+        console.group('Training session deleted successfully:', response.data);
+        return true;
+      })
+      .catch(error => {
+        console.error('Training session delete error:', error);
+      });
   }
 
   return (
@@ -105,15 +106,15 @@ export default function TrainerSchedule({ reload }) {
               .sort((a, b) => a.id - b.id)
               .map((availability, index) => (
                 <tr key={index}>
-                  <td>{availability.start_time}</td>
-                  <td>{availability.end_time}</td>
+                  <td>{availability.startTime}</td>
+                  <td>{availability.endTime}</td>
                   <td>{availability.status}</td>
                   <td>
-                    { availability.status == 'available'
+                    { availability.status === 'available'
                       ? <button onClick={() => setAvailability(availability.id, 'unavailable')}>Set to unavailable</button>
-                      : availability.status == 'unavailable'
+                      : availability.status === 'unavailable'
                         ? <button onClick={() => setAvailability(availability.id, 'available')}>Set to available</button>
-                        : <button onClick={() => cancelSession(availability.training_session_id, availability.id)}>Cancel session</button>
+                        : <button onClick={() => cancelSession(availability.trainingSessionId, availability.id)}>Cancel session</button>
                     }
                   </td>
                 </tr>
@@ -122,7 +123,7 @@ export default function TrainerSchedule({ reload }) {
           </tbody>
         </table>
       </div>
-    }
+      }
     </>
   );
 }

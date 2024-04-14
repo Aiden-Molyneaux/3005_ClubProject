@@ -4,7 +4,7 @@ import { Routes, Route, useNavigate } from 'react-router-dom';
 import Auth from './ui/Auth.jsx';
 import Registration from './ui/Registration.jsx';
 import Dashboard from './ui/Dashboard.jsx';
-import Header from './ui/Header.jsx'
+import Header from './ui/Header.jsx';
 import Footer from './ui/Footer.jsx';
 
 function App() {
@@ -13,15 +13,15 @@ function App() {
   React.useEffect(() => {
     const auth = JSON.parse(window.localStorage.getItem('auth'));
     if (auth) {
-      if(auth.user.role == 'none') {
+      if(auth.user.role === 'none') {
         navigate('/registration');
       } else {
         navigate('/dashboard');
       }
     } else {
-      navigate('/auth/login')
+      navigate('/auth/login');
     }
-  }, [])
+  }, []);
 
   return (
     <>
@@ -37,7 +37,6 @@ function App() {
           </Routes>
         </div>
       </main>
-
       <Footer/>
     </>
   );

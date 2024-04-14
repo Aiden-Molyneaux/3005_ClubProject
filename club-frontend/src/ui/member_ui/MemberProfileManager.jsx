@@ -1,14 +1,14 @@
 import axios from 'axios';
 import { useState } from 'react';
 import { useAppState } from '../../AppState.jsx';
-import ProfileManager from '../ProfileManager.jsx';
 
 export default function MemberProfileManager() {
   const { state, dispatch } = useAppState();
+  
   const [member, setMember] = useState(state.member);
   const [formData, setMemberFormData] = useState({
     gender: member.gender,
-    birth_date: member.birth_date,
+    birthDate: member.birth_date,
     weight: member.weight,
     height: member.height
   });
@@ -28,17 +28,17 @@ export default function MemberProfileManager() {
   function submitMemberProfileUpdate() {
     return axios.put(`http://localhost:3000/members/${member.id}`, {
       gender: formData.gender,
-      birth_date: formData.birth_date,
+      birthDate: formData.birthDate,
       weight: formData.weight,
       height: formData.height
     })
-    .then(response => {
-      console.log('Member update successful:', response);
-      return response.data.member;
-    })
-    .catch(error => {
-      console.error('Member update error:', error);
-    })
+      .then(response => {
+        console.log('Member update successful:', response);
+        return response.data.member;
+      })
+      .catch(error => {
+        console.error('Member update error:', error);
+      });
   }
 
   return (
@@ -48,7 +48,7 @@ export default function MemberProfileManager() {
         <div className='horizontalLine'></div>
         <div>
           <label>Birth date:</label>
-          <input type="text" name="birth_date" value={formData.birth_date} onChange={handleChange}/>
+          <input type="text" name="birthDate" value={formData.birthDate} onChange={handleChange}/>
         </div>
 
         <div>

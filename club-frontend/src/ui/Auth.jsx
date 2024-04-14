@@ -4,6 +4,13 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useAppState } from '../AppState.jsx';
 
 function Auth() {
+  const navigate = useNavigate();
+
+  const { dispatch } = useAppState();
+
+  const [authType, setAuthType] = useState('login');
+  const [userData, setUserData] = useState(null);
+  const [error, setError] = useState('');
   const [loginFormData, setLoginFormData] = useState({
     username: '',
     password: ''
@@ -11,17 +18,10 @@ function Auth() {
   const [signupFormData, setSignupFormData] = useState({
     username: '',
     password: '',
-    first_name: '',
-    last_name: '',
+    firstName: '',
+    lastName: '',
     email: '@hotmail.com'
   });
-  
-  const { dispatch } = useAppState();
-  const navigate = useNavigate();
-
-  const [authType, setAuthType] = useState('login');
-  const [userData, setUserData] = useState(null);
-  const [error, setError] = useState('');
   
   useEffect(() => {
     if (window.localStorage.getItem('auth')) {
@@ -35,29 +35,29 @@ function Auth() {
         user: {
           id: userData.id,
           username: userData.username,
-          first_name: userData.first_name,
-          last_name: userData.last_name,
+          firstName: userData.first_name,
+          lastName: userData.last_name,
           email: userData.email,
           role: userData.role
         }
       }});
 
       window.localStorage.setItem('auth', JSON.stringify({ url: 'http://localhost:3000', user: {...userData} }));
-      navigate('/registration')
+      navigate('/registration');
     }
   }, [userData]);
 
   function handleChange(event) {
-    if (authType == 'login') {
+    if (authType === 'login') {
       setLoginFormData({ ...loginFormData, [event.target.name] : event.target.value });
     } else {
-      setSignupFormData({ ...signupFormData, [event.target.name] : event.target.value })
+      setSignupFormData({ ...signupFormData, [event.target.name] : event.target.value });
     }
   }
 
   function handleSubmit(event) {
     event.preventDefault();
-    if(authType == 'login') {
+    if(authType === 'login') {
       submitLogin().then((user) => setUserData(user));
     } else {
       submitSignup().then((user) => setUserData(user));
@@ -69,56 +69,56 @@ function Auth() {
       username: loginFormData.username,
       password: loginFormData.password,
     })
-    .then(response => {
-      console.group('Login successful:', response);
-      return response.data.user;
-    })
-    .catch(error => {
-      console.error('Login error:', error);
-      setError('Login failed. Please try again.');
-    });
+      .then(response => {
+        console.group('Login successful:', response);
+        return response.data.user;
+      })
+      .catch(error => {
+        console.error('Login error:', error);
+        setError('Login failed. Please try again.');
+      });
   }
   
   function submitSignup() {
     return axios.post('http://localhost:3000/auth/signup', {
       username: signupFormData.username,
       password: signupFormData.password,
-      first_name: signupFormData.first_name,
-      last_name: signupFormData.last_name,
+      firstName: signupFormData.firstName,
+      lastName: signupFormData.lastName,
       email: signupFormData.email,
     })
-    .then(response => {
-      console.group('Sign-up successful:', response.data);
-      return response.data.user;
-    })
-    .catch(error => {
-      console.error('Sign-up error:', error);
-      setError('Sign-up failed. Please try again.');
-    });
+      .then(response => {
+        console.group('Sign-up successful:', response.data);
+        return response.data.user;
+      })
+      .catch(error => {
+        console.error('Sign-up error:', error);
+        setError('Sign-up failed. Please try again.');
+      });
   }
 
   return (
     <>
-      {authType == 'login' &&
+      {authType === 'login' &&
         <form className='authForm' onSubmit={handleSubmit}>
           <h3>Sign-in</h3>
           <div className='horizontalLine'></div>
           <div>
             <label>Username:</label>
-            <input type="text" name="username" value={loginFormData.username} onChange={handleChange}/>
+            <input type='text' name='username' value={loginFormData.username} onChange={handleChange}/>
           </div>
 
           <div>
-            <label>Password:</label>
-            <input type="text" name="password" value={loginFormData.password} onChange={handleChange}/>
+            <label htmlFor='password'>Password:</label>
+            <input type='text' name='password' value={loginFormData.password} onChange={handleChange}/>
           </div>
 
-          <button className='topMargin' type="submit">Login-in</button>
+          <button className='topMargin' type='submit'>Login-in</button>
           
           <>
             <div className='horizontalLine'></div>
             <button className='topMargin' onClick={() => setAuthType('signup')}>
-              <Link to="/auth/signup">or Sign-up</Link>
+              <Link to='/auth/signup'>or Sign-up</Link>
             </button>
           </>
 
@@ -126,41 +126,41 @@ function Auth() {
         </form>
       }
 
-      {authType == 'signup' &&
+      {authType === 'signup' &&
         <form className='authForm' onSubmit={handleSubmit}>
           <h3>Sign-up</h3>
           <div className='horizontalLine'></div>
           <div>
-            <label>Username:</label>
-            <input type="text" name="username" value={signupFormData.username} onChange={handleChange}/>
+            <label htmlFor='username'>Username:</label>
+            <input type='text' name='username' value={signupFormData.username} onChange={handleChange}/>
           </div>
 
           <div>
-            <label>Password:</label>
-            <input type="text" name="password" value={signupFormData.password} onChange={handleChange}/>
+            <label htmlFor='password'>Password:</label>
+            <input type='text' name='password' value={signupFormData.password} onChange={handleChange}/>
           </div>
 
           <div>
-            <label>First Name:</label>
-            <input type="text" name="first_name" value={signupFormData.first_name} onChange={handleChange}/>
+            <label htmlFor='firstName'>First Name:</label>
+            <input type='text' name='firstName' value={signupFormData.firstName} onChange={handleChange}/>
           </div>
 
           <div>
-            <label>Last Name:</label>
-            <input type="text" name="last_name" value={signupFormData.last_name} onChange={handleChange}/>
+            <label htmlFor='lastName'>Last Name:</label>
+            <input type='text' name='lastName' value={signupFormData.lastName} onChange={handleChange}/>
           </div>
 
           <div>
-            <label>Email:</label>
-            <input type="text" name="email" value={signupFormData.email} onChange={handleChange}/>
+            <label htmlFor='email'>Email:</label>
+            <input type='text' name='email' value={signupFormData.email} onChange={handleChange}/>
           </div>
 
-          <button className='topMargin' type="submit">Sign-up</button>
+          <button className='topMargin' type='submit'>Sign-up</button>
 
           <>
             <div className='horizontalLine'></div>
             <button className='topMargin' onClick={() => setAuthType('login')}>
-              <Link to="/auth/login">or Login</Link>
+              <Link to='/auth/login'>or Login</Link>
             </button>
           </>
 

@@ -8,7 +8,7 @@ export default function FitnessGoalSection() {
   const member = state.member;
 
   const [goals, setGoals] = useState([]);
-  const [formData, setFormData] = useState({ goal_text: '' })
+  const [formData, setFormData] = useState({ goalText: '' });
   const [formToggle, setFormToggle] = useState(false);
 
   useEffect(() => {
@@ -31,69 +31,64 @@ export default function FitnessGoalSection() {
       setGoals(prevGoals => [...prevGoals, goal]);
     });
 
-    setFormData({ goal_text: '' });
+    setFormData({ goalText: '' });
     setFormToggle(false);
   }
 
   function submitGoal() {
     return axios.post('http://localhost:3000/fitness_goals', {
-      member_id: member.id,
-      goal_text: formData.goal_text,
+      memberId: member.id,
+      goalText: formData.goalText,
       status: false,
-      date_created: new Date()
+      dateCreated: new Date()
     })
-    .then(response => {
-      console.group('Fitness goal created successfully:', response.data);
-      return response.data.fitness_goal;
-    })
-    .catch(error => {
-      console.error('Fitness goal creation error:', error);
-    })
+      .then(response => {
+        console.group('Fitness goal created successfully:', response.data);
+        return response.data.fitness_goal;
+      })
+      .catch(error => {
+        console.error('Fitness goal creation error:', error);
+      });
   }
 
-  function deleteGoal(goal_id) {
-    axios.delete(`http://localhost:3000/fitness_goals/${goal_id}`)
-    .then(response => {
-      console.group('Fitness Goal deleted succesfully:', response.data);
+  function deleteGoal(goalId) {
+    axios.delete(`http://localhost:3000/fitness_goals/${goalId}`)
+      .then(response => {
+        console.group('Fitness Goal deleted succesfully:', response.data);
 
-      const newGoals = goals.filter((goal) => goal.id !== goal_id);
-      setGoals(newGoals);
-    })
-    .catch(error => {
-      console.error('Exercise routine delete error:', error);
-    })
+        const newGoals = goals.filter((goal) => goal.id !== goalId);
+        setGoals(newGoals);
+      })
+      .catch(error => {
+        console.error('Exercise routine delete error:', error);
+      });
   }
 
-  function completeGoal(goal_id) {
-    axios.patch(`http://localhost:3000/fitness_goals/${goal_id}`, {
+  function completeGoal(goalId) {
+    axios.patch(`http://localhost:3000/fitness_goals/${goalId}`, {
       status: true
     })
-    .then(response => {
-      console.log('Fitness goal successfully updated:', response);
+      .then(response => {
+        console.log('Fitness goal successfully updated:', response);
 
-      const newGoals = goals.map((goal) => {
-        if (goal.id == goal_id) {
-          goal.status = true;
-        }
+        const newGoals = goals.map((goal) => {
+          if (goal.id === goalId) { goal.status = true; }
+          return goal;
+        });
 
-        return goal;
+        setGoals(newGoals);
+      })
+      .catch(error => {
+        console.error('Fitness goal update error:', error);
       });
-
-      console.log({newGoals})
-
-      setGoals(newGoals);
-    })
-    .catch(error => {
-      console.error('Fitness goal update error:', error);
-    })
   }
 
-  const form_UI = (
+  const formJSX = (
     <form onSubmit={handleSubmit}>
       <div className='horizontalLine'></div>
       <div>
-        <label htmlFor='goal_text'>Goal description:</label>
-        <input type='text' name='goal_text' value={formData.goal_text} onChange={handleChange}></input>
+        <label htmlFor='goalText'>Goal description:</label>
+        <input type='text' name='goalText' value={formData.goalText} onChange={handleChange}></input>
       </div>
 
       <button className='topMargin rightMargin' type='submit'>Submit</button>
@@ -101,14 +96,12 @@ export default function FitnessGoalSection() {
     </form>
   );
 
-  const noGoals = goals.length == 0;
-
   return (
     <div className='healthAnalyticsSection bottomMargin'>
       <h3>Fitness Goals</h3>
       <div className='horizontalLine'></div>
       <div className="goalSection">
-        { noGoals
+        { goals.length === 0
           ? <h4>You currently have no fitness goals</h4>
           : <> { goals && goals.map((goal, index) => (
             <div key={index} className='goalCard'> 
@@ -120,13 +113,13 @@ export default function FitnessGoalSection() {
               {!goal.status && <button className='rightMargin' onClick={() => completeGoal(goal.id)}>Complete</button>}
               <button className='topMargin' onClick={() => deleteGoal(goal.id)}>Delete</button>
             </div>
-            ))}
+          ))}
           </>
         }
       </div>
 
       { formToggle && goals
-        ? form_UI
+        ? formJSX
         : <button className='topMargin' onClick={() => setFormToggle(true)}>Add Goal</button>
       }
     </div>

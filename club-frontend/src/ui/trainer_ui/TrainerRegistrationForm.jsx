@@ -1,34 +1,35 @@
 import axios from 'axios';
+import PropTypes from 'prop-types';
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom'; 
 import { useAppState } from '../../AppState.jsx';
 
 export default function TrainerRegistrationForm({ setTrainerRegToggle }) {
-  const { state, dispatch } = useAppState();
+  TrainerRegistrationForm.propTypes = {
+    setTrainerRegToggle: PropTypes.func.isRequired
+  };
+
   const navigate = useNavigate();
 
+  const { state, dispatch } = useAppState();
   const user = state.user;
+
   const [trainerAppData, setTrainerAppData] = useState(null);
-  const [formData, setFormData] = useState({
-    resume: '',
-    availability_type: 'afternoon'
-  });
+  const [formData, setFormData] = useState({ resume: '', availabilityType: 'afternoon' });
 
   useEffect(() => {
-    if (!window.localStorage.getItem('auth')) {
-      navigate('/auth/login');
-    }
+    if (!window.localStorage.getItem('auth')) { navigate('/auth/login'); }
   });
 
   useEffect(() => {
     if (trainerAppData) {
       dispatch({ type: 'trainer_application_submitted', payload: { 
-        trainer_application: {
+        trainerApplication: {
           id: trainerAppData.id,
-          user_id: trainerAppData.user_id,
+          userId: trainerAppData.user_id,
           resume: trainerAppData.resume,
           status: trainerAppData.status,
-          availability_type: trainerAppData.availability_type
+          availabilityType: trainerAppData.availability_type
         }
       }});
     }
@@ -40,35 +41,35 @@ export default function TrainerRegistrationForm({ setTrainerRegToggle }) {
 
   function handleSubmit(event) {
     event.preventDefault();
-    submitTrainerApplication().then((trainer_application) => setTrainerAppData(trainer_application));
+    submitTrainerApplication().then((trainerApplication) => setTrainerAppData(trainerApplication));
   }
 
   function submitTrainerApplication() {
     return axios.post('http://localhost:3000/trainer_applications', {
-      user_id: user.id,
+      userId: user.id,
       resume: formData.resume,
       status: 'Awaiting',
-      availability_type: formData.availability_type
+      availabilityType: formData.availabilityType
     })
-    .then(response => {
-      console.log('Trainer application submission successful:', response);
-      return response.data.trainer_application;
-    })
-    .catch(error => {
-      console.error('Trainer application submission error:', error);
-    })
+      .then(response => {
+        console.log('Trainer application submission successful:', response);
+        return response.data.trainer_application;
+      })
+      .catch(error => {
+        console.error('Trainer application submission error:', error);
+      });
   }
 
   return (
     <form onSubmit={handleSubmit}>
       <div>
-        <label>Resume:</label>
+        <label htmlFor='availabilityType'>Resume:</label>
         <input type="text" name="resume" value={formData.resume} onChange={handleChange}/>
       </div>
 
       <div>
-        <label>Availability:</label>
-        <select name="availability_type" value={formData.availability_type} onChange={handleChange}>
+        <label htmlFor='availabilityType'>Availability:</label>
+        <select name="availabilityType" value={formData.availabilityType} onChange={handleChange}>
           <option value="morning">6am-2pm</option>
           <option value="afternoon">8am-4pm</option>
           <option value="evening">12pm-8pm</option>
@@ -79,7 +80,6 @@ export default function TrainerRegistrationForm({ setTrainerRegToggle }) {
         <button className='topMargin rightMargin' type="submit">Submit</button>
         <button className='topMargin' onClick={() => setTrainerRegToggle(false)}>Close</button>
       </div>
-      
     </form>
-  )
+  );
 }

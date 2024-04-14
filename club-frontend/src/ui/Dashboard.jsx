@@ -6,34 +6,34 @@ import MemberDashboard from './member_ui/MemberDashboard.jsx';
 import TrainerDashboard from './trainer_ui/TrainerDashboard.jsx';
 
 export default function Dashboard() {
-  const { state, dispatch } = useAppState();
   const navigate = useNavigate();
 
+  const { state, dispatch } = useAppState();
   const user = state.user;
   const role = user.role;
 
   useEffect(() => {
     if(!user) {
       navigate('/auth/login');
-    } else if (user.role == 'none') {
+    } else if (user.role === 'none') {
       navigate('/registration');
     }
   }, []);
 
   function logout() {
     dispatch({ type: 'logout', payload: {} });
-    navigate('/auth/login')
+    navigate('/auth/login');
   } 
 
   return (
     <>
       <div className='dashboardLogoutBanner bottomMargin'>
-        <h3>Hi {user.first_name}, welcome to your {user.role} dashboard!</h3>
+        <h3>Hi {user.firstName}, welcome to your {user.role} dashboard!</h3>
         <button onClick={() => logout()}>Logout?</button>
       </div>
-      { (role == 'admin') && <AdminDashboard/> }
-      { (role == 'member') && <MemberDashboard/> }
-      { (role == 'trainer') && <TrainerDashboard/> }
+      { (role === 'admin') && <AdminDashboard/> }
+      { (role === 'member') && <MemberDashboard/> }
+      { (role === 'trainer') && <TrainerDashboard/> }
     </>
   );
 }

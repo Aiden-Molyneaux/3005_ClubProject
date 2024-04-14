@@ -1,3 +1,4 @@
+/* eslint-disable indent */
 
 import React, { useReducer } from 'react';
 
@@ -53,12 +54,12 @@ export const AppState = (props) => {
     user: {
       id: null,
       username: null,
-      first_name: null,
-      last_name: null,
+      firstName: null,
+      lastName: null,
       email: null,
       role: null
     }
-  }
+  };
 
   let auth = window.localStorage.getItem('auth');
   if (auth) {
@@ -72,10 +73,10 @@ export const AppState = (props) => {
     <AppContext.Provider value={{state, dispatch}}>
       {props.children}
     </AppContext.Provider>
-  )
-}
+  );
+};
 
 // useAppState hook
 export const useAppState = () => {
   return React.useContext(AppContext);
-}
+};

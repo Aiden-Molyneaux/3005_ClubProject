@@ -8,10 +8,7 @@ export default function TrainerExpertiseSection() {
   const trainer = state.trainer;
 
   const [expertise, setExpertise] = useState([]);
-  const [formData, setFormData] = useState({ 
-    expertise: '', 
-    description: '' 
-  });
+  const [formData, setFormData] = useState({ expertise: '', description: '' });
   const [formToggle, setFormToggle] = useState(false);
 
   useEffect(() => {
@@ -41,33 +38,32 @@ export default function TrainerExpertiseSection() {
   function submitExpertise() {
     return axios.post('http://localhost:3000/expertise', {
       expertise: formData.expertise,
-      trainer_id: trainer.id,
+      trainerId: trainer.id,
       description: formData.description,
     })
-    .then(response => {
-      console.group('Expertise entry created successfully:', response.data);
-      return response.data.expertise;
-    })
-    .catch(error => {
-      console.error('Expertise entry creation error:', error);
-    })
+      .then(response => {
+        console.group('Expertise entry created successfully:', response.data);
+        return response.data.expertise;
+      })
+      .catch(error => {
+        console.error('Expertise entry creation error:', error);
+      });
   }
 
-  function deleteExpertise(expertise_id) {
-    axios.delete(`http://localhost:3000/expertise/${expertise_id}`)
-    .then(response => {
-      console.group('Expertise entry deleted succesfully:', response.data);
+  function deleteExpertise(expertiseId) {
+    axios.delete(`http://localhost:3000/expertise/${expertiseId}`)
+      .then(response => {
+        console.group('Expertise entry deleted succesfully:', response.data);
 
-      const newExpertise = expertise.filter((expertise) => expertise.id !== expertise_id);
-      setExpertise(newExpertise);
-    })
-    .catch(error => {
-      console.error('Expertise entry delete error:', error);
-    })
+        const newExpertise = expertise.filter((expertise) => expertise.id !== expertiseId);
+        setExpertise(newExpertise);
+      })
+      .catch(error => {
+        console.error('Expertise entry delete error:', error);
+      });
   }
 
-
-  const form_UI = (
+  const formJSX = (
     <form onSubmit={handleSubmit}>
       <div className='horizontalLine'></div>
       <div>
@@ -85,13 +81,11 @@ export default function TrainerExpertiseSection() {
     </form>
   );
 
-  const noExpertise = expertise.length == 0;
-
   return (
     <div className='healthAnalyticsSection'>
       <h3>Trainer Expertise</h3>
       <div className='horizontalLine'></div>
-      { noExpertise
+      { expertise.length === 0
         ? <h4>You currently have no expertise listed</h4>
         : <div className='goalSection'> { expertise && expertise.map((ex, index) => (
           <div key={index}> 
@@ -100,12 +94,12 @@ export default function TrainerExpertiseSection() {
             <div><label>Description: {ex.description}</label></div>
             <button className='topMargin' onClick={() => deleteExpertise(ex.id)}>Delete</button>
           </div>
-          ))}
+        ))}
         </div>
       }
 
       { formToggle
-        ? form_UI
+        ? formJSX
         : <button onClick={() => setFormToggle(true)}>Add Expertise</button>
       }
     </div>

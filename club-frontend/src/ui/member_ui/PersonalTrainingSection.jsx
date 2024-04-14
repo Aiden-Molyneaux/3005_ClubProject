@@ -10,15 +10,14 @@ export default function PersonalTrainingSection() {
   const member = state.member;
 
   const [sessions, setSessions] = useState([]);
+  const [trainerAvailabilities, setTrainerAvailabilities] = useState({});
+  const [availableTimeslots, setAvailableTimeslots] = useState([]);
+  const [reloadFlag, setReloadFlag] = useState(false);
   const [formData, setFormData] = useState({
     date: '', 
     trainerId: '',
     timeslotId: ''
   });
-
-  const [trainerAvailabilities, setTrainerAvailabilities] = useState({});
-  const [availableTimeslots, setAvailableTimeslots] = useState([]);
-  const [reloadFlag, setReloadFlag] = useState(false);
 
   useEffect(() => {
     if (member && member.id) {
@@ -33,7 +32,6 @@ export default function PersonalTrainingSection() {
   }, [reloadFlag]);
 
   useEffect(() => {
-    // This effect will run whenever trainerAvailabilities changes
     if (trainerAvailabilities && Object.keys(trainerAvailabilities).length > 0) {
       const initialTrainerId = Object.keys(trainerAvailabilities)[0];
       const initialDate = dates[1] + 'T04:00:00.000Z';
@@ -41,10 +39,10 @@ export default function PersonalTrainingSection() {
       const timeslots = getAvailableTimeslots(initialTrainerId, initialDate);
       let initialTimeslotId = 0;
       if (timeslots.length > 0) {
-        setAvailableTimeslots(timeslots)
-        initialTimeslotId = timeslots[0].availability_id;
+        setAvailableTimeslots(timeslots);
+        initialTimeslotId = timeslots[0].availabilityId;
       } else {
-        setAvailableTimeslots([])
+        setAvailableTimeslots([]);
       }
   
       setFormData({
@@ -59,13 +57,10 @@ export default function PersonalTrainingSection() {
     const timeslots = getAvailableTimeslots(formData.trainerId, formData.date);
     if (timeslots.length > 0) {
       setAvailableTimeslots(timeslots);
-      console.log({timeslots})
-      setFormData({...formData, timeslotId: timeslots[0].availability_id})
+      setFormData({...formData, timeslotId: timeslots[0].availabilityId});
     } else {
-      setAvailableTimeslots([])
+      setAvailableTimeslots([]);
     }
-
-    console.log({formData})
   }, [formData.trainerId, formData.date, reloadFlag]);
 
   function handleChange(event) {
@@ -74,7 +69,7 @@ export default function PersonalTrainingSection() {
 
   function handleSubmit(event) {
     event.preventDefault();
-    console.log({formData})
+    
     submitSession().then((session) => {
       submitAttendee(session.id);
       updateTrainerAvailability(formData.timeslotId, 'booked').then(() => {
@@ -85,49 +80,49 @@ export default function PersonalTrainingSection() {
 
   function submitSession() {
     return axios.post('http://localhost:3000/training_sessions', {
-      trainer_id: formData.trainerId,
-      room_id: 1,
-      availability_id: formData.timeslotId
+      trainerId: formData.trainerId,
+      roomId: 1,
+      availabilityId: formData.timeslotId
     })
-    .then(response => {
-      console.group('Training session created successfully:', response.data);
-      return response.data.training_session;
-    })
-    .catch(error => {
-      console.error('Training session creation error:', error);
-    })
+      .then(response => {
+        console.group('Training session created successfully:', response.data);
+        return response.data.training_session;
+      })
+      .catch(error => {
+        console.error('Training session creation error:', error);
+      });
   }
 
-  function submitAttendee(training_session_id) {
+  function submitAttendee(trainingSessionId) {
     axios.post('http://localhost:3000/attendees', {
-      training_session_id: training_session_id,
-      member_id: member.id
+      trainingSessionId: trainingSessionId,
+      memberId: member.id
     })
-    .then(response => {
-      console.group('Attendee created successfully:', response.data);
-    })
-    .catch(error => {
-      console.error('Attendee creation error:', error);
-    })
+      .then(response => {
+        console.group('Attendee created successfully:', response.data);
+      })
+      .catch(error => {
+        console.error('Attendee creation error:', error);
+      });
   }
 
-  function cancelSession(training_session_id, availability_id) {
-    deleteTrainingSession(training_session_id).then(() => {
-      updateTrainerAvailability(availability_id, 'available').then(() => {
+  function cancelSession(trainingSessionId, availabilityId) {
+    deleteTrainingSession(trainingSessionId).then(() => {
+      updateTrainerAvailability(availabilityId, 'available').then(() => {
         setReloadFlag(!reloadFlag);
       });
-    })
+    });
   }
 
-  function deleteTrainingSession(training_session_id) {
-    return axios.delete(`http://localhost:3000/training_sessions/${training_session_id}`)
-    .then(response => {
-      console.group('Training session deleted successfully:', response.data);
-      return true;
-    })
-    .catch(error => {
-      console.error('Training session delete error:', error);
-    })
+  function deleteTrainingSession(trainingSessionId) {
+    return axios.delete(`http://localhost:3000/training_sessions/${trainingSessionId}`)
+      .then(response => {
+        console.group('Training session deleted successfully:', response.data);
+        return true;
+      })
+      .catch(error => {
+        console.error('Training session delete error:', error);
+      });
   }
 
   function getDates() {
@@ -143,38 +138,37 @@ export default function PersonalTrainingSection() {
 
   const dates = getDates();
 
-  function getAvailableTimeslots(trainer_id, date) {
-    console.log({trainer_id, date})
-    console.log({trainerAvailabilities})
-    const trainerAvailability = trainerAvailabilities[trainer_id];
+  function getAvailableTimeslots(trainerId, date) {
+    const trainerAvailability = trainerAvailabilities[trainerId];
     if (trainerAvailability && trainerAvailability.availabilities) {
       const dateAvailability = trainerAvailability.availabilities[date];
       if (dateAvailability) {
-        return dateAvailability.filter((timeslot) => timeslot.status === 'available').sort((a, b) => a.availability_id - b.availability_id) || [];
+        return dateAvailability
+          .filter((timeslot) => timeslot.status === 'available')
+          .sort((a, b) => a.availabilityId - b.availabilityId) 
+          || [];
       }
     }
     return [];
   }
-
-  const noSessions = sessions.length == 0;
 
   return (
     <div className='memberSchedule'>
       <div className='healthAnalyticsSection topMargin'>
         <h3>Personal Training Sessions</h3>
         <div className='horizontalLine'></div>
-        { noSessions
+        { sessions.length === 0
           ? <h4>You currently have no sessions booked</h4>
           : <div className='goalSection'> { sessions && sessions.map((session, index) => (
             <div key={index} > 
               <h4 className='underline'>Session #{index+1}</h4>
-              <div><label>Trainer: {session.trainer.first_name + ' ' + session.trainer.last_name}</label></div>
+              <div><label>Trainer: {session.trainer.firstName + ' ' + session.trainer.lastName}</label></div>
               <div><label>Date: {session.date.split('T')[0]}</label></div>
-              <div><label>Start time: {session.start_time}</label></div>
-              <div><label>End time: {session.end_time}</label></div>
-              <button className='topMargin' onClick={() => cancelSession(session.id, session.availability_id)}>Cancel</button>
+              <div><label>Start time: {session.startTime}</label></div>
+              <div><label>End time: {session.endTime}</label></div>
+              <button className='topMargin' onClick={() => cancelSession(session.id, session.availabilityId)}>Cancel</button>
             </div>
-            ))}
+          ))}
           </div>
         }
       </div>
@@ -187,7 +181,7 @@ export default function PersonalTrainingSection() {
             <div>
               <label>Date:</label>
               <select name="date" value={formData.date} onChange={handleChange}>
-                {Object.keys(dates).map(date => (
+                { Object.keys(dates).map(date => (
                   <option key={date} value={dates[date] + 'T04:00:00.000Z'}>{dates[date]}</option>
                 ))}
               </select>
@@ -196,8 +190,8 @@ export default function PersonalTrainingSection() {
             <div>
               <label>Trainer:</label>
               <select name="trainerId" value={formData.trainerId} onChange={handleChange}>
-                {Object.values(trainerAvailabilities).map((entry, index) => (
-                  <option key={index} value={entry.trainer.trainer_id}>{entry.trainer.first_name + ' ' + entry.trainer.last_name}</option>
+                { Object.values(trainerAvailabilities).map((entry, index) => (
+                  <option key={index} value={entry.trainer.trainerId}>{entry.trainer.firstName + ' ' + entry.trainer.lastName}</option>
                 ))}
               </select>
             </div>
@@ -207,8 +201,8 @@ export default function PersonalTrainingSection() {
               <select name="timeslotId" value={formData.timeslotId} onChange={handleChange}>
                 { availableTimeslots.length > 0 
                   ? availableTimeslots.map((timeslot, index) => (
-                      <option key={index} value={timeslot.availability_id}>{timeslot.start_time + ' to ' + timeslot.end_time}</option>
-                    ))
+                    <option key={index} value={timeslot.availabilityId}>{timeslot.startTime + ' to ' + timeslot.endTime}</option>
+                  ))
                   : <option key={0} value={''}>--</option>
                 }
               </select>

@@ -11,20 +11,20 @@ export default function EquipmentSection() {
       if (equipment) {
         setEquipment(equipment.sort((a, b) => a.id - b.id));
       }
-    })
-  }, [reloadFlag])
+    });
+  }, [reloadFlag]);
 
-  function orderMaintenance(equipment_id) {
-    axios.patch(`http://localhost:3000/equipment/${equipment_id}`, {
-      maintenance_status: 'No'
+  function orderMaintenance(equipmentId) {
+    axios.patch(`http://localhost:3000/equipment/${equipmentId}`, {
+      maintenanceStatus: 'No'
     })
-    .then(response => {
-      console.log('Equipment successfully updated:', response);
-      setReloadFlag(!reloadFlag);
-    })
-    .catch(error => {
-      console.error('Equipment update error:', error);
-    })
+      .then(response => {
+        console.log('Equipment successfully updated:', response);
+        setReloadFlag(!reloadFlag);
+      })
+      .catch(error => {
+        console.error('Equipment update error:', error);
+      });
   }
 
   return (
@@ -47,7 +47,7 @@ export default function EquipmentSection() {
               <td>{equipment.name}</td>
               <td>{equipment.type}</td>
               <td>{equipment.maintenance_status}</td>
-              {equipment.maintenance_status == 'Yes' && 
+              { equipment.maintenance_status === 'Yes' && 
                 <td>
                   <button onClick={() => orderMaintenance(equipment.id)}>Order maintenance</button>
                 </td>

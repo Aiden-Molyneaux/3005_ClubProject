@@ -3,5 +3,5 @@ export default function Footer() {
     <footer>
       <p>Aiden Molyneaux 2024</p>
     </footer>
-  )
+  );
 }
