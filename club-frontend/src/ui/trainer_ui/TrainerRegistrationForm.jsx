@@ -1,8 +1,8 @@
-import axios from 'axios';
 import PropTypes from 'prop-types';
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom'; 
 import { useAppState } from '../../AppState.jsx';
+import { createTrainerApplication } from '../../util/helper.js';
 
 export default function TrainerRegistrationForm({ setTrainerRegToggle }) {
   TrainerRegistrationForm.propTypes = {
@@ -23,15 +23,7 @@ export default function TrainerRegistrationForm({ setTrainerRegToggle }) {
 
   useEffect(() => {
     if (trainerAppData) {
-      dispatch({ type: 'trainer_application_submitted', payload: { 
-        trainerApplication: {
-          id: trainerAppData.id,
-          userId: trainerAppData.user_id,
-          resume: trainerAppData.resume,
-          status: trainerAppData.status,
-          availabilityType: trainerAppData.availability_type
-        }
-      }});
+      dispatch({ type: 'trainer_application_submitted', payload: { trainerApplication: { ...trainerAppData } }});
     }
   }, [trainerAppData]);
 
@@ -41,29 +33,18 @@ export default function TrainerRegistrationForm({ setTrainerRegToggle }) {
 
   function handleSubmit(event) {
     event.preventDefault();
-    submitTrainerApplication().then((trainerApplication) => setTrainerAppData(trainerApplication));
-  }
 
-  function submitTrainerApplication() {
-    return axios.post('http://localhost:3000/trainer_applications', {
-      userId: user.id,
-      resume: formData.resume,
+    createTrainerApplication({
+      userId: user.id, 
       status: 'Awaiting',
-      availabilityType: formData.availabilityType
-    })
-      .then(response => {
-        console.log('Trainer application submission successful:', response);
-        return response.data.trainer_application;
-      })
-      .catch(error => {
-        console.error('Trainer application submission error:', error);
-      });
+      ...formData
+    }).then((trainerApplication) => setTrainerAppData(trainerApplication));
   }
 
   return (
     <form onSubmit={handleSubmit}>
       <div>
-        <label htmlFor='availabilityType'>Resume:</label>
+        <label htmlFor='resume'>Resume:</label>
         <input type="text" name="resume" value={formData.resume} onChange={handleChange}/>
       </div>
 

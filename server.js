@@ -44,6 +44,29 @@ app.use(session({
 app.use(passport.initialize());
 app.use(passport.session());
 
+// HELPERS
+function snakeToCamel(obj) {
+  if (obj instanceof Date) {
+    // Return the Date object as-is
+    return obj;
+  }
+
+  if (obj === null || typeof obj !== 'object') {
+    return obj;
+  }
+
+  if (Array.isArray(obj)) {
+    // If obj is an array, map each item in the array and recursively call snakeToCamel
+    return obj.map((item) => snakeToCamel(item));
+  }
+
+  return Object.keys(obj).reduce((acc, key) => {
+    const camelKey = key.replace(/_([a-z])/g, (match, char) => char.toUpperCase());
+    acc[camelKey] = snakeToCamel(obj[key]);
+    return acc;
+  }, {});
+}
+
 // AUTHENTICATION
 app.post(
   '/auth/signup',
@@ -51,7 +74,7 @@ app.post(
   (req, res) => {
     Logger.signupRequestReceived();
 
-    res.json({ user: req.user });
+    res.json({ user: snakeToCamel(req.user) });
   },
 );
 
@@ -61,7 +84,7 @@ app.post(
   (req, res) => {
     Logger.loginRequestReceived();
 
-    res.json({ user: req.user });
+    res.json({ user: snakeToCamel(req.user) });
   },
 );
 
@@ -69,14 +92,14 @@ app.post(
 app.get('/users', async (req, res) => {
   Logger.getRequestReceived();
 
-  let data_d;
+  let data;
   try {
     data = await client.query('SELECT * FROM users;');
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Internal Server Error' });
   } finally {
-    res.status(200).json({ users: data.rows });
+    res.status(200).json({ users: snakeToCamel(data.rows) });
   }
 });
 
@@ -106,9 +129,7 @@ app.patch('/users/:id', async (req, res) => {
 app.put('/users/:id', async (req, res) => {
   Logger.putRequestReceived();
 
-  const {
-    username, firstName, lastName, email,
-  } = req.body;
+  const { username, firstName, lastName, email } = req.body;
   let data;
   try {
     data = await client.query(
@@ -119,7 +140,11 @@ app.put('/users/:id', async (req, res) => {
     console.error(err);
     res.status(500).json({ error: 'Internal Server Error' });
   } finally {
-    if (data.rowCount === 0) { res.status(404).json({ error: 'Could not update User.' }); } else { res.status(200).json({ user: data.rows[0] }); }
+    if (data.rowCount === 0) {
+      res.status(404).json({ error: 'Could not update User.' });
+    } else {
+      res.status(200).json({ user: snakeToCamel(data.rows[0]) });
+    }
   }
 });
 
@@ -155,16 +180,14 @@ app.get('/members', async (req, res) => {
     console.error(err);
     res.status(500).json({ error: 'Internal Server Error' });
   } finally {
-    res.status(200).json({ members: data.rows });
+    res.status(200).json({ members: snakeToCamel(data.rows) });
   }
 });
 
 app.post('/members', async (req, res) => {
   Logger.postRequestReceived();
 
-  const {
-    userId, gender, birthDate, weight, height,
-  } = req.body;
+  const { userId, gender, birthDate, weight, height } = req.body;
   let data;
 
   try {
@@ -176,7 +199,7 @@ app.post('/members', async (req, res) => {
     console.error(err);
     res.status(500).json({ error: 'Internal Server Error' });
   } finally {
-    res.status(200).json({ member: data.rows[0] });
+    res.status(200).json({ member: snakeToCamel(data.rows[0]) });
   }
 });
 
@@ -197,7 +220,7 @@ app.put('/members/:id', async (req, res) => {
     if (data.rowCount === 0) {
       res.status(404).json({ error: 'Could not update Member.' });
     } else {
-      res.status(200).json({ member: data.rows[0] });
+      res.status(200).json({ member: snakeToCamel(data.rows[0]) });
     }
   }
 });
@@ -223,128 +246,6 @@ app.delete('/members/:id', async (req, res) => {
   }
 });
 
-// TRAINING SESSION CRUD
-app.get('/training_sessions', async (req, res) => {
-  Logger.getRequestReceived();
-
-  let data;
-  try {
-    data = await client.query(
-      `SELECT member_id, training_session_id, room_id, availability_id, date, start_time, end_time, session_trainer.trainer_id, user_id, username, first_name, last_name, email
-        FROM (
-            SELECT *
-            FROM (
-                SELECT *
-                FROM trains
-                JOIN attendee ON trains.id = attendee.training_session_id
-            ) AS session_attendee
-            JOIN trainer ON session_attendee.trainer_id = trainer.id
-        ) AS session_trainer
-        JOIN trainer_availability ON session_trainer.availability_id = trainer_availability.id
-        JOIN users ON session_trainer.user_id = users.id;`,
-    );
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: 'Internal Server Error' });
-  } finally {
-    res.status(200).json({ trainingSessions: data.rows });
-  }
-});
-
-app.post('/training_sessions', async (req, res) => {
-  Logger.postRequestReceived();
-
-  const { trainerId, roomId, availabilityId } = req.body;
-  let data;
-
-  try {
-    data = await client.query(
-      'INSERT INTO trains(trainer_id, room_id, availability_id) VALUES ($1, $2, $3) RETURNING id, trainer_id, room_id, availability_id',
-      [trainerId, roomId, availabilityId],
-    );
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: 'Internal Server Error' });
-  } finally {
-    res.status(200).json({ trainingSession: data.rows[0] });
-  }
-});
-
-app.delete('/training_sessions/:id', async (req, res) => {
-  Logger.deleteRequestReceived();
-
-  let data;
-  try {
-    data = await client.query('DELETE FROM trains WHERE id = $1;', [req.params.id]);
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: 'Internal Server Error' });
-  } finally {
-    if (data.rowCount === 0) {
-      res.status(404).json({ error: 'Training session does not exist.' });
-    } else {
-      res.status(200).json({ confirmation: 'Training session deleted.' });
-    }
-  }
-});
-
-app.delete('/training_sessions_by_trainer', async (req, res) => {
-  Logger.deleteRequestReceived();
-
-  const { trainerId } = req.query;
-  let data;
-  try {
-    data = await client.query('DELETE FROM trains WHERE trainer_id = $1;', [trainerId]);
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: 'Internal Server Error' });
-  } finally {
-    if (data.rowCount === 0) {
-      res.status(404).json({ error: 'Trainer\'s training sessions do not exist.' });
-    } else {
-      res.status(200).json({ confirmation: 'Trainer\'s training sessions deleted.' });
-    }
-  }
-});
-
-// ATTENDEE CRUD
-app.post('/attendees', async (req, res) => {
-  Logger.postRequestReceived();
-
-  const { trainingSessionId, memberId } = req.body;
-  let data;
-  try {
-    data = await client.query(
-      'INSERT INTO attendee(training_session_id, member_id) VALUES ($1, $2) RETURNING training_session_id, member_id',
-      [trainingSessionId, memberId],
-    );
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: 'Internal Server Error' });
-  } finally {
-    res.status(200).json({ attendee: data.rows[0] });
-  }
-});
-
-app.delete('/attendees', async (req, res) => {
-  Logger.deleteRequestReceived();
-
-  const { trainingSessionId, memberId } = req.body;
-  let data;
-  try {
-    data = await client.query('DELETE FROM attendee WHERE training_session_id = $1 AND member_id = $2;', [trainingSessionId, memberId]);
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: 'Internal Server Error' });
-  } finally {
-    if (data.rowCount === 0) {
-      res.status(404).json({ error: 'Attendee does not exist.' });
-    } else {
-      res.status(200).json({ confirmation: 'Attendee deleted.' });
-    }
-  }
-});
-
 // FITNESS GOAL CRUD
 app.get('/fitness_goals', async (req, res) => {
   Logger.getRequestReceived();
@@ -356,7 +257,7 @@ app.get('/fitness_goals', async (req, res) => {
     console.error(err);
     res.status(500).json({ error: 'Internal Server Error' });
   } finally {
-    res.status(200).json({ fitnessGoals: data.rows });
+    res.status(200).json({ fitnessGoals: snakeToCamel(data.rows) });
   }
 });
 
@@ -377,7 +278,7 @@ app.post('/fitness_goals', async (req, res) => {
     console.error(err);
     res.status(500).json({ error: 'Internal Server Error' });
   } finally {
-    res.status(200).json({ fitnessGoal: data.rows[0] });
+    res.status(200).json({ fitnessGoal: snakeToCamel(data.rows[0]) });
   }
 });
 
@@ -435,7 +336,7 @@ app.get('/exercise_routines', async (req, res) => {
     console.error(err);
     res.status(500).json({ error: 'Internal Server Error' });
   } finally {
-    res.status(200).json({ exercise_routines: data.rows });
+    res.status(200).json({ exerciseRoutines: snakeToCamel(data.rows) });
   }
 });
 
@@ -454,7 +355,7 @@ app.post('/exercise_routines', async (req, res) => {
     console.error(err);
     res.status(500).json({ error: 'Internal Server Error' });
   } finally {
-    res.status(200).json({ exerciseRoutine: data.rows[0] });
+    res.status(200).json({ exerciseRoutine: snakeToCamel(data.rows[0]) });
   }
 });
 
@@ -479,6 +380,128 @@ app.delete('/exercise_routines/:id', async (req, res) => {
   }
 });
 
+// ATTENDEE CRUD
+app.post('/attendees', async (req, res) => {
+  Logger.postRequestReceived();
+
+  const { trainingSessionId, memberId } = req.body;
+  let data;
+  try {
+    data = await client.query(
+      'INSERT INTO attendee(training_session_id, member_id) VALUES ($1, $2) RETURNING training_session_id, member_id',
+      [trainingSessionId, memberId],
+    );
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Internal Server Error' });
+  } finally {
+    res.status(200).json({ attendee: snakeToCamel(data.rows[0]) });
+  }
+});
+
+app.delete('/attendees', async (req, res) => {
+  Logger.deleteRequestReceived();
+
+  const { trainingSessionId, memberId } = req.body;
+  let data;
+  try {
+    data = await client.query('DELETE FROM attendee WHERE training_session_id = $1 AND member_id = $2;', [trainingSessionId, memberId]);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Internal Server Error' });
+  } finally {
+    if (data.rowCount === 0) {
+      res.status(404).json({ error: 'Attendee does not exist.' });
+    } else {
+      res.status(200).json({ confirmation: 'Attendee deleted.' });
+    }
+  }
+});
+
+// TRAINING SESSION CRUD
+app.get('/training_sessions', async (req, res) => {
+  Logger.getRequestReceived();
+
+  let data;
+  try {
+    data = await client.query(
+      `SELECT member_id, training_session_id, room_id, availability_id, date, start_time, end_time, session_trainer.trainer_id, user_id, username, first_name, last_name, email
+        FROM (
+            SELECT *
+            FROM (
+                SELECT *
+                FROM trains
+                JOIN attendee ON trains.id = attendee.training_session_id
+            ) AS session_attendee
+            JOIN trainer ON session_attendee.trainer_id = trainer.id
+        ) AS session_trainer
+        JOIN trainer_availability ON session_trainer.availability_id = trainer_availability.id
+        JOIN users ON session_trainer.user_id = users.id;`,
+    );
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Internal Server Error' });
+  } finally {
+    res.status(200).json({ trainingSessions: snakeToCamel(data.rows) });
+  }
+});
+
+app.post('/training_sessions', async (req, res) => {
+  Logger.postRequestReceived();
+
+  const { trainerId, roomId, availabilityId } = req.body;
+  let data;
+
+  try {
+    data = await client.query(
+      'INSERT INTO trains(trainer_id, room_id, availability_id) VALUES ($1, $2, $3) RETURNING id, trainer_id, room_id, availability_id',
+      [trainerId, roomId, availabilityId],
+    );
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Internal Server Error' });
+  } finally {
+    res.status(200).json({ trainingSession: snakeToCamel(data.rows[0]) });
+  }
+});
+
+app.delete('/training_sessions/:id', async (req, res) => {
+  Logger.deleteRequestReceived();
+
+  let data;
+  try {
+    data = await client.query('DELETE FROM trains WHERE id = $1;', [req.params.id]);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Internal Server Error' });
+  } finally {
+    if (data.rowCount === 0) {
+      res.status(404).json({ error: 'Training session does not exist.' });
+    } else {
+      res.status(200).json({ confirmation: 'Training session deleted.' });
+    }
+  }
+});
+
+app.delete('/training_sessions_by_trainer', async (req, res) => {
+  Logger.deleteRequestReceived();
+
+  const { trainerId } = req.query;
+  let data;
+  try {
+    data = await client.query('DELETE FROM trains WHERE trainer_id = $1;', [trainerId]);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Internal Server Error' });
+  } finally {
+    if (data.rowCount === 0) {
+      res.status(404).json({ error: 'Trainer\'s training sessions do not exist.' });
+    } else {
+      res.status(200).json({ confirmation: 'Trainer\'s training sessions deleted.' });
+    }
+  }
+});
+
 // TRAINER CRUD
 app.get('/trainers', async (req, res) => {
   Logger.getRequestReceived();
@@ -490,7 +513,7 @@ app.get('/trainers', async (req, res) => {
     console.error(err);
     res.status(500).json({ error: 'Internal Server Error' });
   } finally {
-    res.status(200).json({ trainers: data.rows });
+    res.status(200).json({ trainers: snakeToCamel(data.rows) });
   }
 });
 
@@ -505,7 +528,7 @@ app.get('/trainers_with_user', async (req, res) => {
     console.error(err);
     res.status(500).json({ error: 'Internal Server Error' });
   } finally {
-    res.status(200).json({ trainersWithUser: data.rows });
+    res.status(200).json({ trainersWithUsers: snakeToCamel(data.rows) });
   }
 });
 
@@ -524,7 +547,7 @@ app.post('/trainers', async (req, res) => {
     console.error(err);
     res.status(500).json({ error: 'Internal Server Error' });
   } finally {
-    res.status(200).json({ trainer: data.rows[0] });
+    res.status(200).json({ trainer: snakeToCamel(data.rows[0]) });
   }
 });
 
@@ -545,7 +568,7 @@ app.patch('/trainers/:id', async (req, res) => {
     if (data.rowCount === 0) {
       res.status(404).json({ error: 'Could not update Trainer.' });
     } else {
-      res.status(200).json({ trainer: data.rows[0] });
+      res.status(200).json({ trainer: snakeToCamel(data.rows[0]) });
     }
   }
 });
@@ -582,7 +605,7 @@ app.get('/trainer_applications', async (req, res) => {
     console.error(err);
     res.status(500).json({ error: 'Internal Server Error' });
   } finally {
-    res.status(200).json({ trainerApplications: data.rows });
+    res.status(200).json({ trainerApplications: snakeToCamel(data.rows) });
   }
 });
 
@@ -596,7 +619,7 @@ app.get('/trainer_applications_with_user', async (req, res) => {
     console.error(err);
     res.status(500).json({ error: 'Internal Server Error' });
   } finally {
-    res.status(200).json({ trainerApplications: data.rows });
+    res.status(200).json({ trainerApplications: snakeToCamel(data.rows) });
   }
 });
 
@@ -652,7 +675,7 @@ app.get('/trainer_availability', async (req, res) => {
     console.error(err);
     res.status(500).json({ error: 'Internal Server Error' });
   } finally {
-    res.status(200).json({ trainerAvailabilities: data.rows });
+    res.status(200).json({ trainerAvailabilities: snakeToCamel(data.rows) });
   }
 });
 
@@ -673,7 +696,7 @@ app.get('/trainer_availability_with_trains', async (req, res) => {
     console.error(err);
     res.status(500).json({ error: 'Internal Server Error' });
   } finally {
-    res.status(200).json({ trainerAvailabilities: data.rows });
+    res.status(200).json({ trainerAvailabilities: snakeToCamel(data.rows) });
   }
 });
 
@@ -808,7 +831,7 @@ app.patch('/trainer_availability/:id', async (req, res) => {
     if (data.rowCount === 0) {
       res.status(404).json({ error: 'Could not update Trainer Availability.' });
     } else {
-      res.status(200).json({ trainerAvailability: data.rows[0] });
+      res.status(200).json({ trainerAvailability: snakeToCamel(data.rows[0]) });
     }
   }
 });
@@ -845,7 +868,7 @@ app.get('/expertise', async (req, res) => {
     console.error(err);
     res.status(500).json({ error: 'Internal Server Error' });
   } finally {
-    res.status(200).json({ expertise: data.rows });
+    res.status(200).json({ expertise: snakeToCamel(data.rows) });
   }
 });
 
@@ -864,7 +887,7 @@ app.post('/expertise', async (req, res) => {
     console.error(err);
     res.status(500).json({ error: 'Internal Server Error' });
   } finally {
-    res.status(200).json({ expertise: data.rows[0] });
+    res.status(200).json({ expertise: snakeToCamel(data.rows[0]) });
   }
 });
 
@@ -900,7 +923,7 @@ app.get('/rooms', async (req, res) => {
     console.error(err);
     res.status(500).json({ error: 'Internal Server Error' });
   } finally {
-    res.status(200).json({ rooms: data.rows });
+    res.status(200).json({ rooms: snakeToCamel(data.rows) });
   }
 });
 
@@ -917,7 +940,7 @@ app.post('/rooms', async (req, res) => {
     console.error(err);
     res.status(500).json({ error: 'Internal Server Error' });
   } finally {
-    res.status(200).json({ trainer: data.rows[0] });
+    res.status(200).json({ room: snakeToCamel(data.rows[0]) });
   }
 });
 
@@ -932,7 +955,7 @@ app.get('/equipment', async (req, res) => {
     console.error(err);
     res.status(500).json({ error: 'Internal Server Error' });
   } finally {
-    res.status(200).json({ equipment: data.rows });
+    res.status(200).json({ equipment: snakeToCamel(data.rows) });
   }
 });
 

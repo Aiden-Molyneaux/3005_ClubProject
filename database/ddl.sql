@@ -94,5 +94,5 @@ CREATE TABLE equipment (
 	id					SERIAL PRIMARY KEY,
 	name  				VARCHAR(40),
 	type 				VARCHAR(40),
-	maintenance_status  CHAR(3)
+	maintenance_status  VARCHAR(3)
 );

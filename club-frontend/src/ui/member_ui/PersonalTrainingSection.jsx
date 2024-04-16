@@ -1,9 +1,13 @@
-import axios from 'axios';
 import { useState, useEffect } from 'react';
 import { useAppState } from '../../AppState.jsx';
-import { getMemberTrainingSessions } from '../../util/helper.js';
-import { getTrainersWithAvailability } from '../../util/helper.js';
-import { updateTrainerAvailability } from '../../util/helper.js';
+import { 
+  createAttendee,
+  getTrainingSessions,
+  createTrainingSession,
+  deleteTrainingSessionById,
+  getTrainersWithAvailability,
+  updateTrainerAvailability,
+} from '../../util/helper.js';
 
 export default function PersonalTrainingSection() {
   const { state } = useAppState();
@@ -21,7 +25,7 @@ export default function PersonalTrainingSection() {
 
   useEffect(() => {
     if (member && member.id) {
-      getMemberTrainingSessions(member.id).then((sessions) => setSessions(sessions));
+      getTrainingSessions(member.id).then((sessions) => setSessions(sessions));
     }
   }, [member, reloadFlag]);
 
@@ -70,59 +74,24 @@ export default function PersonalTrainingSection() {
   function handleSubmit(event) {
     event.preventDefault();
     
-    submitSession().then((session) => {
-      submitAttendee(session.id);
+    createTrainingSession(
+      formData.trainerId, 
+      1, 
+      formData.timeslotId
+    ).then((session) => {
+      createAttendee(session.id, member.id);
       updateTrainerAvailability(formData.timeslotId, 'booked').then(() => {
         setReloadFlag(!reloadFlag);
       });
     });
   }
 
-  function submitSession() {
-    return axios.post('http://localhost:3000/training_sessions', {
-      trainerId: formData.trainerId,
-      roomId: 1,
-      availabilityId: formData.timeslotId
-    })
-      .then(response => {
-        console.group('Training session created successfully:', response.data);
-        return response.data.training_session;
-      })
-      .catch(error => {
-        console.error('Training session creation error:', error);
-      });
-  }
-
-  function submitAttendee(trainingSessionId) {
-    axios.post('http://localhost:3000/attendees', {
-      trainingSessionId: trainingSessionId,
-      memberId: member.id
-    })
-      .then(response => {
-        console.group('Attendee created successfully:', response.data);
-      })
-      .catch(error => {
-        console.error('Attendee creation error:', error);
-      });
-  }
-
   function cancelSession(trainingSessionId, availabilityId) {
-    deleteTrainingSession(trainingSessionId).then(() => {
+    deleteTrainingSessionById(trainingSessionId).then(() => {
       updateTrainerAvailability(availabilityId, 'available').then(() => {
         setReloadFlag(!reloadFlag);
       });
     });
-  }
-
-  function deleteTrainingSession(trainingSessionId) {
-    return axios.delete(`http://localhost:3000/training_sessions/${trainingSessionId}`)
-      .then(response => {
-        console.group('Training session deleted successfully:', response.data);
-        return true;
-      })
-      .catch(error => {
-        console.error('Training session delete error:', error);
-      });
   }
 
   function getDates() {
@@ -154,7 +123,7 @@ export default function PersonalTrainingSection() {
 
   return (
     <div className='memberSchedule'>
-      <div className='healthAnalyticsSection topMargin'>
+      <div className='generalSection topMargin'>
         <h3>Personal Training Sessions</h3>
         <div className='horizontalLine'></div>
         { sessions.length === 0
@@ -173,7 +142,7 @@ export default function PersonalTrainingSection() {
         }
       </div>
 
-      <div className='healthAnalyticsSection topMargin'>
+      <div className='generalSection topMargin'>
         <h3>Book a Personal Training Session</h3>
         <div className='horizontalLine'></div>
         { trainerAvailabilities &&

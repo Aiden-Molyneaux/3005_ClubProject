@@ -1,7 +1,11 @@
-import axios from 'axios';
 import { useState, useEffect } from 'react';
 import { useAppState } from '../../AppState.jsx';
-import { getMemberFitnessGoals } from '../../util/helper.js';
+import { 
+  getFitnessGoals, 
+  createFitnessGoal, 
+  updateFitnessGoalStatus, 
+  deleteFitnessGoal 
+} from '../../util/helper.js';
 
 export default function FitnessGoalSection() {
   const { state } = useAppState();
@@ -13,7 +17,7 @@ export default function FitnessGoalSection() {
 
   useEffect(() => {
     if (member && member.id) {
-      getMemberFitnessGoals(member.id).then((goals) => {
+      getFitnessGoals(member.id).then((goals) => {
         if (goals) {
           setGoals(goals);
         }
@@ -27,7 +31,7 @@ export default function FitnessGoalSection() {
 
   function handleSubmit(event) {
     event.preventDefault();
-    submitGoal().then((goal) => {
+    createFitnessGoal({memberId: member.id, ...formData}).then((goal) => {
       setGoals(prevGoals => [...prevGoals, goal]);
     });
 
@@ -35,52 +39,22 @@ export default function FitnessGoalSection() {
     setFormToggle(false);
   }
 
-  function submitGoal() {
-    return axios.post('http://localhost:3000/fitness_goals', {
-      memberId: member.id,
-      goalText: formData.goalText,
-      status: false,
-      dateCreated: new Date()
-    })
-      .then(response => {
-        console.group('Fitness goal created successfully:', response.data);
-        return response.data.fitness_goal;
-      })
-      .catch(error => {
-        console.error('Fitness goal creation error:', error);
-      });
-  }
-
   function deleteGoal(goalId) {
-    axios.delete(`http://localhost:3000/fitness_goals/${goalId}`)
-      .then(response => {
-        console.group('Fitness Goal deleted succesfully:', response.data);
-
-        const newGoals = goals.filter((goal) => goal.id !== goalId);
-        setGoals(newGoals);
-      })
-      .catch(error => {
-        console.error('Exercise routine delete error:', error);
-      });
+    deleteFitnessGoal(goalId).then(() => {
+      const newGoals = goals.filter((goal) => goal.id !== goalId);
+      setGoals(newGoals);
+    });
   }
 
   function completeGoal(goalId) {
-    axios.patch(`http://localhost:3000/fitness_goals/${goalId}`, {
-      status: true
-    })
-      .then(response => {
-        console.log('Fitness goal successfully updated:', response);
-
-        const newGoals = goals.map((goal) => {
-          if (goal.id === goalId) { goal.status = true; }
-          return goal;
-        });
-
-        setGoals(newGoals);
-      })
-      .catch(error => {
-        console.error('Fitness goal update error:', error);
+    updateFitnessGoalStatus(() => {
+      const newGoals = goals.map((goal) => {
+        if (goal.id === goalId) { goal.status = true; }
+        return goal;
       });
+  
+      setGoals(newGoals);
+    });
   }
 
   const formJSX = (
@@ -97,7 +71,7 @@ export default function FitnessGoalSection() {
   );
 
   return (
-    <div className='healthAnalyticsSection bottomMargin'>
+    <div className='generalSection bottomMargin'>
       <h3>Fitness Goals</h3>
       <div className='horizontalLine'></div>
       <div className="goalSection">
@@ -106,7 +80,7 @@ export default function FitnessGoalSection() {
           : <> { goals && goals.map((goal, index) => (
             <div key={index} className='goalCard'> 
               <h4 className='underline'>Goal #{index+1}</h4>
-              <label>Description: {goal.goal_text}</label>
+              <label>Description: {goal.goalText}</label>
               <br/>
               <label>Status: {goal.status ? 'Complete' : 'Working on it!'}</label>
               <br/>

@@ -1,7 +1,6 @@
-import axios from 'axios';
 import { useState, useEffect } from 'react';
 import { useAppState } from '../../AppState.jsx';
-import { getTrainerExpertise } from '../../util/helper.js';
+import { getExpertise, createExpertise, deleteExpertise } from '../../util/helper.js';
 
 export default function TrainerExpertiseSection() {
   const { state } = useAppState();
@@ -13,7 +12,7 @@ export default function TrainerExpertiseSection() {
 
   useEffect(() => {
     if (trainer && trainer.id) {
-      getTrainerExpertise(trainer.id).then((expertise) => {
+      getExpertise(trainer.id).then((expertise) => {
         if (expertise) {
           setExpertise(expertise);
         }
@@ -27,7 +26,10 @@ export default function TrainerExpertiseSection() {
 
   function handleSubmit(event) {
     event.preventDefault();
-    submitExpertise().then((expertise) => {
+    createExpertise({
+      trainerId: trainer.id,
+      ...formData
+    }).then((expertise) => {
       setExpertise(prevExpertise => [...prevExpertise, expertise]);
     });
 
@@ -35,32 +37,11 @@ export default function TrainerExpertiseSection() {
     setFormToggle(false);
   }
 
-  function submitExpertise() {
-    return axios.post('http://localhost:3000/expertise', {
-      expertise: formData.expertise,
-      trainerId: trainer.id,
-      description: formData.description,
-    })
-      .then(response => {
-        console.group('Expertise entry created successfully:', response.data);
-        return response.data.expertise;
-      })
-      .catch(error => {
-        console.error('Expertise entry creation error:', error);
-      });
-  }
-
-  function deleteExpertise(expertiseId) {
-    axios.delete(`http://localhost:3000/expertise/${expertiseId}`)
-      .then(response => {
-        console.group('Expertise entry deleted succesfully:', response.data);
-
-        const newExpertise = expertise.filter((expertise) => expertise.id !== expertiseId);
-        setExpertise(newExpertise);
-      })
-      .catch(error => {
-        console.error('Expertise entry delete error:', error);
-      });
+  function deleteExpertiseEntry(expertiseId) {
+    deleteExpertise(expertiseId).then(() => {
+      const newExpertise = expertise.filter((expertise) => expertise.id !== expertiseId);
+      setExpertise(newExpertise);
+    });
   }
 
   const formJSX = (
@@ -82,7 +63,7 @@ export default function TrainerExpertiseSection() {
   );
 
   return (
-    <div className='healthAnalyticsSection'>
+    <div className='generalSection'>
       <h3>Trainer Expertise</h3>
       <div className='horizontalLine'></div>
       { expertise.length === 0
@@ -92,7 +73,7 @@ export default function TrainerExpertiseSection() {
             <h4 className='underline'>Expertise #{index+1}</h4>
             <div><label>Expertise: {ex.expertise}</label></div>
             <div><label>Description: {ex.description}</label></div>
-            <button className='topMargin' onClick={() => deleteExpertise(ex.id)}>Delete</button>
+            <button className='topMargin' onClick={() => deleteExpertiseEntry(ex.id)}>Delete</button>
           </div>
         ))}
         </div>

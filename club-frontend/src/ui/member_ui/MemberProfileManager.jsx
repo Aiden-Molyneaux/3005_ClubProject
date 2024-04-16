@@ -1,6 +1,6 @@
-import axios from 'axios';
 import { useState } from 'react';
 import { useAppState } from '../../AppState.jsx';
+import { updateMember } from '../../util/helper.js';
 
 export default function MemberProfileManager() {
   const { state, dispatch } = useAppState();
@@ -8,7 +8,7 @@ export default function MemberProfileManager() {
   const [member, setMember] = useState(state.member);
   const [formData, setMemberFormData] = useState({
     gender: member.gender,
-    birthDate: member.birth_date,
+    birthDate: member.birthDate,
     weight: member.weight,
     height: member.height
   });
@@ -19,30 +19,14 @@ export default function MemberProfileManager() {
 
   function handleSubmit(event) {
     event.preventDefault();
-    submitMemberProfileUpdate().then((member) => {
+    updateMember({memberId: member.id, ...formData}).then((member) => {
       setMember(member);
-      dispatch({ type: 'member_updated', payload: {member} });
+      dispatch({ type: 'member_updated', payload: { member } });
     });
   }
 
-  function submitMemberProfileUpdate() {
-    return axios.put(`http://localhost:3000/members/${member.id}`, {
-      gender: formData.gender,
-      birthDate: formData.birthDate,
-      weight: formData.weight,
-      height: formData.height
-    })
-      .then(response => {
-        console.log('Member update successful:', response);
-        return response.data.member;
-      })
-      .catch(error => {
-        console.error('Member update error:', error);
-      });
-  }
-
   return (
-    <div className='healthAnalyticsSection'>
+    <div className='generalSection'>
       <form onSubmit={handleSubmit}>
         <h3>Manage your Member Profile</h3>
         <div className='horizontalLine'></div>

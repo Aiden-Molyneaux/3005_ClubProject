@@ -1,9 +1,8 @@
-import axios from 'axios';
 import PropTypes from 'prop-types';
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom'; 
 import { useAppState } from '../../AppState.jsx';
-import { updateUserRole }  from '../../util/helper.js';
+import { updateUserRole, createMember }  from '../../util/helper.js';
 
 export default function MemberRegistrationForm({ setMemRegToggle }) {
   MemberRegistrationForm.propTypes = {
@@ -31,18 +30,9 @@ export default function MemberRegistrationForm({ setMemRegToggle }) {
 
   useEffect(() => {
     if (memberData) {
-      dispatch({ type: 'member_registered', payload: { 
-        member: {
-          id: memberData.id,
-          userId: memberData.user_id,
-          gender: memberData.gender,
-          birthDate: memberData.birth_date,
-          weight: memberData.weight,
-          height: memberData.height
-        }
-      }});
+      dispatch({ type: 'member_registered', payload: { member: { ...memberData } }});
 
-      updateUserRole(memberData.user_id, 'member');
+      updateUserRole(memberData.userId, 'member');
       navigate('/dashboard');
     }
   }, [memberData]);
@@ -53,24 +43,11 @@ export default function MemberRegistrationForm({ setMemRegToggle }) {
 
   function handleSubmit(event) {
     event.preventDefault();
-    submitMemberRegistration().then((member) => setMemberData(member));
-  }
 
-  function submitMemberRegistration() {
-    return axios.post('http://localhost:3000/members', {
+    createMember({
       userId: user.id,
-      gender: formData.gender,
-      birthDate: formData.birth_date,
-      weight: formData.weight,
-      height: formData.height
-    })
-      .then(response => {
-        console.log('Membership registration successful:', response);
-        return response.data.member;
-      })
-      .catch(error => {
-        console.error('Member registration error:', error);
-      });
+      ...formData
+    }).then((member) => setMemberData(member));
   }
 
   return (
@@ -78,7 +55,7 @@ export default function MemberRegistrationForm({ setMemRegToggle }) {
       <div className='innerRegForm'>
         <div>
           <label>Birth date:</label>
-          <input type="text" name="birth_date" value={formData.birthDate} onChange={handleChange}/>
+          <input type="text" name="birthDate" value={formData.birthDate} onChange={handleChange}/>
         </div>
 
         <div>

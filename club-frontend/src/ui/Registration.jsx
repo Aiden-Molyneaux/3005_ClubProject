@@ -24,7 +24,7 @@ export default function Registration() {
 
     getTrainerApplication(user.id).then((trainerApplication) => {
       if (trainerApplication) {
-        dispatch({ type: 'trainer_application_submitted', payload: {trainerApplication} });
+        dispatch({ type: 'trainer_application_submitted', payload: { trainerApplication } });
       }
     });
   }, []);
@@ -51,7 +51,7 @@ export default function Registration() {
         <button onClick={() => logout()}>Logout?</button>
       </div>
 
-      <div className='healthAnalyticsSection'>
+      <div className='generalSection'>
         <h3>Register for a Membership</h3>
         <div className='horizontalLine'></div>
         { memRegToggle

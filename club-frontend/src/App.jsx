@@ -27,7 +27,7 @@ function App() {
     <>
       <Header/>
       <main>
-        <div className='innerContainer'>
+        <div>
           <Routes>
             <Route path="/auth/login" element={<Auth/>}></Route>
             <Route path="/auth/signup" element={<Auth/>}></Route>

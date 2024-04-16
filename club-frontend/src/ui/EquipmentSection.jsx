@@ -1,6 +1,5 @@
-import axios from 'axios';
 import { useState, useEffect } from 'react';
-import { getEquipment } from '../util/helper.js';
+import { getEquipment, updateEquipmentStatus } from '../util/helper.js';
 
 export default function EquipmentSection() {
   const [equipment, setEquipment] = useState([]);
@@ -15,20 +14,13 @@ export default function EquipmentSection() {
   }, [reloadFlag]);
 
   function orderMaintenance(equipmentId) {
-    axios.patch(`http://localhost:3000/equipment/${equipmentId}`, {
-      maintenanceStatus: 'No'
-    })
-      .then(response => {
-        console.log('Equipment successfully updated:', response);
-        setReloadFlag(!reloadFlag);
-      })
-      .catch(error => {
-        console.error('Equipment update error:', error);
-      });
+    updateEquipmentStatus(equipmentId).then(() => {
+      setReloadFlag(!reloadFlag);
+    });
   }
 
   return (
-    <div className='healthAnalyticsSection topMargin'>
+    <div className='generalSection topMargin'>
       <h3>Equipment</h3>
       <div className='horizontalLine'></div>
       <table className='topMargin'>
@@ -46,8 +38,8 @@ export default function EquipmentSection() {
               <td>{equipment.id}</td>
               <td>{equipment.name}</td>
               <td>{equipment.type}</td>
-              <td>{equipment.maintenance_status}</td>
-              { equipment.maintenance_status === 'Yes' && 
+              <td>{equipment.maintenanceStatus}</td>
+              { equipment.maintenanceStatus === 'Yes' && 
                 <td>
                   <button onClick={() => orderMaintenance(equipment.id)}>Order maintenance</button>
                 </td>

@@ -1,9 +1,11 @@
-import axios from 'axios';
 import PropTypes from 'prop-types';
 import { useState, useEffect } from 'react';
 import { useAppState } from '../../AppState.jsx';
-import { updateTrainerAvailability } from '../../util/helper.js';
-import { getTrainerAvailability } from '../../util/helper.js';
+import { 
+  deleteTrainingSessionById,
+  getTrainerAvailability,
+  updateTrainerAvailability
+} from '../../util/helper.js';
 
 export default function TrainerSchedule({ reloadSchedule }) {
   TrainerSchedule.propTypes = {
@@ -31,6 +33,7 @@ export default function TrainerSchedule({ reloadSchedule }) {
   useEffect(() => {
     if (trainerAvailabilities) {
       const sortedAvailabilities = trainerAvailabilities.sort((a, b) => a.id - b.id);
+      console.log({sortedAvailabilities});
       const newDates = {};
       sortedAvailabilities.forEach((availability) => {
         newDates[availability.date] = availability.date;
@@ -47,41 +50,23 @@ export default function TrainerSchedule({ reloadSchedule }) {
   }
 
   function setAvailability(availabilityId, status) {
-    axios.patch(`http://localhost:3000/trainer_availability/${availabilityId}`, {
-      status: status
-    })
-      .then(response => {
-        console.log('Trainer availability updated successfully:', response);
-        setReloadFlag(!reloadFlag);
-      })
-      .catch(error => {
-        console.error('Trainer availability update error:', error);
-      });
+    updateTrainerAvailability(availabilityId, status).then(() => {
+      setReloadFlag(!reloadFlag);
+    });
   }
 
   function cancelSession(trainingSessionId, availabilityId) {
-    deleteTrainingSession(trainingSessionId).then(() => {
+    deleteTrainingSessionById(trainingSessionId).then(() => {
       updateTrainerAvailability(availabilityId, 'available').then(() => {
         setReloadFlag(!reloadFlag);
       });
     });
   }
 
-  function deleteTrainingSession(trainingSessionId) {
-    return axios.delete(`http://localhost:3000/training_sessions/${trainingSessionId}`)
-      .then(response => {
-        console.group('Training session deleted successfully:', response.data);
-        return true;
-      })
-      .catch(error => {
-        console.error('Training session delete error:', error);
-      });
-  }
-
   return (
     <>
       { dates &&
-      <div className='healthAnalyticsSection'>
+      <div className='generalSection'>
         <h3>Manage your Schedule</h3>
         <div className='horizontalLine'></div>
         <div> 

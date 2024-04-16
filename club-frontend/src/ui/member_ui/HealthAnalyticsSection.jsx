@@ -6,11 +6,11 @@ export default function HealthAnalyticsSection() {
   const member = state.member;
 
   function calculateAge() {
-    return differenceInYears(new Date(), new Date(member.birth_date));
+    return differenceInYears(new Date(), new Date(member.birthDate));
   }
 
   return (
-    <div className='healthAnalyticsSection'>
+    <div className='generalSection'>
       <h3>Health Analytics</h3>
       <div className='horizontalLine'></div>
       { member &&

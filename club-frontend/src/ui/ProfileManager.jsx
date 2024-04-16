@@ -1,6 +1,6 @@
-import axios from 'axios';
 import { useState } from 'react';
 import { useAppState } from '../AppState.jsx';
+import { updateUser } from '../util/helper.js';
 
 export default function ProfileManager() {
   const { state, dispatch } = useAppState();
@@ -26,24 +26,15 @@ export default function ProfileManager() {
   }
 
   function submitUserProfileUpdate() {
-    return axios.put(`http://localhost:3000/users/${user.id}`, {
-      username: formData.username,
-      firstName: formData.firstName,
-      lastName: formData.lastName,
-      email: formData.email,
+    return updateUser({
+      userId: user.id, 
+      ...formData, 
       role: user.role
-    })
-      .then(response => {
-        console.log('User profile update successful:', response);
-        return response.data.user;
-      })
-      .catch(error => {
-        console.error('User profile update error:', error);
-      });
+    });
   }
 
   return (
-    <div className='healthAnalyticsSection'>
+    <div className='generalSection'>
       <form onSubmit={handleSubmit}>
         <h3>Manage your Personal Profile</h3>
         <div className='horizontalLine'></div>

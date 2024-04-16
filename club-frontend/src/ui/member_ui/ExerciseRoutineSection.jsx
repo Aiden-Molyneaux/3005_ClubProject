@@ -1,7 +1,10 @@
-import axios from 'axios';
 import { useState, useEffect } from 'react';
 import { useAppState } from '../../AppState.jsx';
-import { getMemberExerciseRoutines } from '../../util/helper.js';
+import { 
+  getExerciseRoutines, 
+  createExerciseRoutine, 
+  deleteExerciseRoutine 
+} from '../../util/helper.js';
 
 export default function ExerciseRoutineSection() {
   const { state } = useAppState();
@@ -13,10 +16,8 @@ export default function ExerciseRoutineSection() {
 
   useEffect(() => {
     if (member && member.id) {
-      getMemberExerciseRoutines(member.id).then((routines) => {
-        if (routines) {
-          setRoutines(routines);
-        }
+      getExerciseRoutines(member.id).then((routines) => {
+        if (routines) { setRoutines(routines); }
       });
     }
   }, [member]);
@@ -27,7 +28,8 @@ export default function ExerciseRoutineSection() {
 
   function handleSubmit(event) {
     event.preventDefault();
-    submitRoutine().then((routine) => {
+
+    createExerciseRoutine({memberId: member.id, ...formData}).then((routine) => {
       setRoutines(prevRoutines => [...prevRoutines, routine]);
     });
 
@@ -35,31 +37,11 @@ export default function ExerciseRoutineSection() {
     setFormToggle(false);
   }
 
-  function submitRoutine() {
-    return axios.post('http://localhost:3000/exercise_routines', {
-      memberId: member.id,
-      description: formData.description
-    })
-      .then(response => {
-        console.group('Exercise routine created successfully:', response.data);
-        return response.data.exercise_routine;
-      })
-      .catch(error => {
-        console.error('Exercise routine creation error:', error);
-      });
-  }
-
   function deleteRoutine(routineId) {
-    axios.delete(`http://localhost:3000/exercise_routines/${routineId}`)
-      .then(response => {
-        console.group('Exercise routine created deleted:', response.data);
-
-        const newRoutines = routines.filter((routine) => routine.id !== routineId);
-        setRoutines(newRoutines);
-      })
-      .catch(error => {
-        console.error('Exercise routine delete error:', error);
-      });
+    deleteExerciseRoutine(routineId).then(() => {
+      const newRoutines = routines.filter((routine) => routine.id !== routineId);
+      setRoutines(newRoutines);
+    });
   }
 
   const formJSX = (
@@ -76,7 +58,7 @@ export default function ExerciseRoutineSection() {
   );
 
   return (
-    <div className='healthAnalyticsSection'>
+    <div className='generalSection'>
       <h3>Exercise Routines</h3>
       <div className='horizontalLine'></div>
       <div className='goalSection'>
